@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historial de Reservas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- ESTILO PARA EL TÍTULO AMARILLO -->
+  <style>
+    .titulo-amarillo {
+      color: #ffd700  !important;  /* Amarillo dorado */
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logooo.png') }}" alt="Logo" />
+      <span>Parrilla 51</span>
+    </div>
+    <a href="{{ url_for('empleado.reservas_empleado') }}" class="btn">← Volver a Reservas</a>
+  </nav>
+
+  <!-- CONTENIDO -->
+  <div class="container mt-4">
+
+    <!-- TÍTULO EN AMARILLO -->
+    <h3 class="text-center mb-4 titulo-amarillo">
+      Historial de Reservas (finalizadas)
+    </h3>
+
+    <!-- BÚSQUEDA -->
+    <form method="GET" action="{{ url_for('empleado.historial_reservas_em') }}" class="mb-4">
+      <div class="d-flex gap-20">
+        <input 
+          type="text" 
+          name="query" 
+          placeholder="Buscar por nombre, teléfono, documento..." 
+          value="{{ request.args.get('query', '') }}"
+          autocomplete="off"
+        />
+        <button class="btn btn-primary" type="submit">Buscar</button>
+      </div>
+    </form>
+
+    {% if historial and historial|length > 0 %}
+      <div class="acciones">
+        {% for reserva in historial %}
+          <div class="card">
+            <h5>Reserva #{{ reserva.id_reserva }}</h5>
+            <p><b>Nombre:</b> {{ reserva.nombre }}</p>
+            <p><b>Fecha:</b> {{ reserva.fecha }}</p>
+            <p><b>Hora:</b> {{ reserva.hora }}</p>
+            <p><b>Personas:</b> {{ reserva.cant_personas }}</p>
+            <p><b>Teléfono:</b> {{ reserva.telefono }}</p>
+            <p><b>Documento:</b> {{ reserva.documento_identidad }}</p>
+            <p><b>Evento:</b> {{ reserva.tipo_evento }}</p>
+            <p><b>Estado:</b> {{ reserva.estado }}</p>
+
+            {% if reserva.comentarios %}
+              <p><b>Comentarios:</b> {{ reserva.comentarios }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-warning text-center mt-4">
+        No hay reservas finalizadas en el historial.
+      </div>
+    {% endif %}
+
+    <!-- BOTÓN VOLVER -->
+    <div class="volver-wrap">
+      <a href="{{ url_for('empleado.reservas_empleado') }}" class="volver">← Volver a Reservas</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    © 2025 Parrilla 51 - Todos los derechos reservados
+  </footer>
+
+</body>
+</html>

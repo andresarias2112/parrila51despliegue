@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos y Categorías</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <!-- 🎨 ESTILOS PERSONALIZADOS -->
+  <style>
+
+    /* TITULOS AMARILLOS */
+    .titulo-amarillo {
+      color: #ffd700 !important;
+      font-weight: bold;
+    }
+
+    /* LISTA LATERAL ESTILO GLASS */
+    #listaCategorias,
+    #listaProductos {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* ITEMS DE LISTA */
+    .list-group-item {
+      background: transparent;
+      color: white;
+      border: none;
+      padding: 12px 15px;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    /* HOVER */
+    .list-group-item:hover {
+      background: rgba(255, 215, 0, 0.15);
+      color: #ffd700;
+      cursor: pointer;
+    }
+
+    /* ITEM SELECCIONADO */
+    .list-group-item.active {
+      background: rgba(255, 215, 0, 0.25) !important;
+      color: #ffd700 !important;
+      border-left: 3px solid #ffd700;
+    }
+
+    /* BOTÓN DE ESTADO */
+    .list-group-item button {
+      font-size: 0.85rem;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-weight: bold;
+    }
+
+    /* TITULOS CENTRADOS */
+    h4 {
+      color: #ffd700;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logooo.png') }}" alt="Logo">
+      <span>Parrilla 51</span>
+    </div>
+    <ul class="nav-links"></ul>
+  </nav>
+
+  <!-- CONTENIDO -->
+  <div class="container my-4">
+    <div class="row">
+
+      <!-- CATEGORÍAS -->
+      <div class="col-6 border-end">
+        <h4 class="text-center mb-3 titulo-amarillo">Categorías</h4>
+        <ul id="listaCategorias" class="list-group">
+          {% for c in categorias %}
+          <li class="list-group-item" data-categoria="{{ c.id_categoria }}">
+            {{ c.nombre_categoria }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- PRODUCTOS -->
+      <div class="col-6">
+        <h4 class="text-center mb-3 titulo-amarillo">Productos</h4>
+        <ul id="listaProductos" class="list-group"></ul>
+      </div>
+
+    </div>
+
+    <!-- BOTÓN VOLVER -->
+    <div class="volver-wrap">
+      <a href="{{ url_for('empleado.empleado_dashboard') }}" class="volver">← Volver al Dashboard</a>
+    </div>
+  </div>
+
+  <!-- ALERTA EMERGENTE -->
+  <div id="alertaEstado" class="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; min-width: 350px; text-align: center; display: none;"></div>
+
+  <footer>
+    © 2025 Parrilla 51 - Todos los derechos reservados
+  </footer>
+
+  <!-- MODAL CAMBIO DE ESTADO -->
+  <div class="modal fade" id="estadoModal" tabindex="-1" aria-labelledby="estadoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+       <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="estadoModalLabel">Cambiar estado del producto</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <p id="productoSeleccionado"></p>
+          <p>Selecciona el nuevo estado:</p>
+          <button class="btn btn-success me-2" id="btnDisponible">Disponible</button>
+          <button class="btn btn-danger" id="btnNoDisponible">No disponible</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- TU SCRIPT ORIGINAL (SIN CAMBIOS) -->
+  <script>
+    const productos = [
+      {% for p in productos %}
+      {
+        id: {{ p.id_producto }},
+        nombre: "{{ p.nombre }}",
+        precio: {{ p.precio }},
+        categoria: {{ p.id_categoria | default(0) }},
+        nombre_categoria: "{{ p.nombre_categoria }}",
+        estado: "{{ p.estado or 'Disponible' }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    const listaCategorias = document.getElementById('listaCategorias');
+    const listaProductos = document.getElementById('listaProductos');
+    let productoActual = null;
+    const modal = new bootstrap.Modal(document.getElementById('estadoModal'));
+    const productoSeleccionado = document.getElementById('productoSeleccionado');
+    const alerta = document.getElementById('alertaEstado');
+
+    listaCategorias.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('list-group-item')) return;
+
+      listaCategorias.querySelectorAll('.list-group-item').forEach(item => item.classList.remove('active'));
+      e.target.classList.add('active');
+
+      const idCategoria = parseInt(e.target.getAttribute('data-categoria'));
+      const filtrados = productos.filter(p => p.categoria === idCategoria);
+
+      listaProductos.innerHTML = '';
+
+      if (filtrados.length === 0) {
+        const li = document.createElement('li');
+        li.classList.add('list-group-item');
+        li.textContent = "No hay productos en esta categoría.";
+        listaProductos.appendChild(li);
+        return;
+      }
+
+      filtrados.forEach(p => {
+        const li = document.createElement('li');
+        li.classList.add('list-group-item');
+
+        const span = document.createElement('span');
+        span.textContent = `${p.nombre} - $${p.precio.toLocaleString()} [${p.nombre_categoria}]`;
+
+        const btn = document.createElement('button');
+        btn.classList.add('btn', 'btn-sm', p.estado === 'Disponible' ? 'btn-success' : 'btn-danger');
+        btn.textContent = p.estado;
+        btn.onclick = () => {
+          productoActual = p;
+          productoSeleccionado.textContent = `Producto: ${p.nombre}`;
+          modal.show();
+        };
+
+        li.appendChild(span);
+        li.appendChild(btn);
+        listaProductos.appendChild(li);
+      });
+    });
+
+    document.getElementById('btnDisponible').addEventListener('click', () => cambiarEstado('Disponible'));
+    document.getElementById('btnNoDisponible').addEventListener('click', () => cambiarEstado('No disponible'));
+
+    function cambiarEstado(nuevoEstado) {
+      if (!productoActual) return;
+
+      fetch('/empleado/actualizar_estado_producto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_producto: productoActual.id,
+          estado: nuevoEstado
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          productoActual.estado = nuevoEstado;
+          actualizarBotonVisual(productoActual);
+          mostrarAlerta("El estado del producto ha sido actualizado con éxito", "success");
+        } else {
+          mostrarAlerta("Error al actualizar el estado del producto.", "danger");
+        }
+      })
+      .catch(err => {
+        mostrarAlerta("Error al actualizar el estado del producto.", "danger");
+      });
+
+      modal.hide();
+    }
+
+    function atualizarBotonVisual(p) {
+      const botones = document.querySelectorAll('.list-group-item button');
+      botones.forEach(btn => {
+        if (btn.parentElement.firstChild.textContent.includes(p.nombre)) {
+          btn.textContent = p.estado;
+          btn.classList.remove('btn-success', 'btn-danger');
+          btn.classList.add(p.estado === 'Disponible' ? 'btn-success' : 'btn-danger');
+        }
+      });
+    }
+
+    function mostrarAlerta(mensaje, tipo) {
+      alerta.textContent = mensaje;
+      alerta.className = `alert alert-${tipo}`;
+      alerta.style.display = 'block';
+      alerta.style.opacity = '1';
+
+      setTimeout(() => {
+        alerta.style.transition = 'opacity 0.5s ease';
+        alerta.style.opacity = '0';
+        setTimeout(() => alerta.style.display = 'none', 500);
+      }, 3000);
+    }
+  </script>
+
+</body>
+</html>
