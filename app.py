@@ -1,7 +1,11 @@
 import os
 from __init__ import create_app
 
-app = create_app()
-
-# NO ejecutar app.run() en producción
-# Gunicorn se encargará de esto
+try:
+    app = create_app()
+    print("✅ App creada exitosamente")
+except Exception as e:
+    print(f"❌ Error al crear app: {e}")
+    import traceback
+    traceback.print_exc()
+    raise
