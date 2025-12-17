@@ -9,12 +9,15 @@ import os
 # =====================
 # CONEXIÓN DIRECTA
 # =====================
+import os
+
 def obtener_conexion():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="parrilla51"
+        host=os.environ.get('MYSQLHOST', 'maglev.proxy.rlwy.net'),
+        user=os.environ.get('MYSQLUSER', 'root'),
+        password=os.environ.get('MYSQLPASSWORD', 'VFrVhNgTDBiaFcemtYnGGYkxyiUOAKsT'),
+        database=os.environ.get('MYSQLDATABASE', 'railway'),
+        port=int(os.environ.get('MYSQLPORT', 15970))
     )
 
 # =====================
