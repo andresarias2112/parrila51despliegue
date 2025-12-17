@@ -14,19 +14,17 @@ def home():
     return render_template("index.html")
 
 
-# -------------------- LOGIN CON DEBUG --------------------
+# -------------------- LOGIN --------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         correo = request.form.get('txtCorreo', '').strip()
         password = request.form.get('txtPassword', '').strip()
         
-        # 🔍 DEBUG: Ver qué llega del formulario
         print("=" * 50)
-        print("🔍 DEBUG - DATOS RECIBIDOS:")
+        print("🔍 DEBUG - LOGIN")
         print(f"Correo: '{correo}'")
         print(f"Password length: {len(password)}")
-        print(f"Password (primeros 3 chars): {password[:3]}***")
         
         if not correo or not password:
             flash("❌ Por favor completa todos los campos", "danger")
@@ -37,31 +35,17 @@ def login():
             cur.execute("SELECT * FROM usuarios WHERE correo = %s", (correo,))
             user = cur.fetchone()
             
-            # 🔍 DEBUG: Ver si encuentra el usuario
-            print(f"Usuario encontrado: {user is not None}")
-            
             if user:
-                # 🔍 DEBUG: Ver datos del usuario
-                print(f"ID Usuario: {user['id_usuario']}")
-                print(f"Nombre: {user['nombre']}")
+                print(f"✅ Usuario encontrado: {user['nombre']}")
                 print(f"Estado: {user['estado']}")
-                print(f"Rol: {user['rol']}")
                 
-                # 🔍 DEBUG: Ver el hash almacenado
-                password_hash = user['contraseña'].strip()  # Eliminar espacios
-                print(f"Hash en DB (primeros 20 chars): {password_hash[:20]}...")
-                print(f"Hash completo length: {len(password_hash)}")
-                print(f"Hash empieza con: {password_hash[:10]}")
+                password_hash = user['contraseña']
+                print(f"Hash length: {len(password_hash)}")
+                print(f"Hash type: {password_hash.split(':')[0]}")
                 
-                # 🔍 DEBUG: Intentar verificar
-                print("\n🔐 Verificando contraseña...")
-                try:
-                    resultado = check_password_hash(password_hash, password)
-                    print(f"Resultado check_password_hash: {resultado}")
-                except Exception as e:
-                    print(f"❌ Error en check_password_hash: {e}")
-                    resultado = False
-                
+                # Verificar contraseña
+                resultado = check_password_hash(password_hash, password)
+                print(f"check_password_hash result: {resultado}")
                 print("=" * 50)
                 
                 if resultado:
@@ -88,21 +72,20 @@ def login():
                 else:
                     flash("❌ Correo o contraseña incorrectos", "danger")
             else:
-                print("❌ Usuario no encontrado en la base de datos")
                 flash("❌ Correo o contraseña incorrectos", "danger")
             
             cur.close()
             
         except Exception as e:
             flash(f"❌ Error en el sistema: {str(e)}", "danger")
-            print(f"💥 ERROR COMPLETO: {e}")
+            print(f"ERROR: {e}")
             import traceback
             traceback.print_exc()
 
     return render_template("login.html")
 
 
-# -------------------- REGISTRO --------------------
+# -------------------- REGISTRO CON PBKDF2 FORZADO --------------------
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -127,17 +110,23 @@ def registro():
                 cur.close()
                 return redirect(url_for('auth.registro'))
             
-            # Hash de la contraseña
-            password_hash = generate_password_hash(password)
+            # ✅ FORZAR PBKDF2:SHA256 en lugar de scrypt
+            password_hash = generate_password_hash(password, method='pbkdf2:sha256')
             
-            # 🔍 DEBUG: Ver el hash que se genera
             print("=" * 50)
-            print("🔍 DEBUG - REGISTRO:")
+            print("🔍 DEBUG - REGISTRO")
             print(f"Correo: {correo}")
-            print(f"Password original length: {len(password)}")
-            print(f"Hash generado (primeros 30 chars): {password_hash[:30]}...")
+            print(f"Hash method: pbkdf2:sha256 (FORZADO)")
             print(f"Hash length: {len(password_hash)}")
+            print(f"Hash (50 chars): {password_hash[:50]}...")
+            
+            # Verificar inmediatamente que el hash funciona
+            test_verify = check_password_hash(password_hash, password)
+            print(f"✅ Verificación inmediata: {test_verify}")
             print("=" * 50)
+            
+            if not test_verify:
+                print("⚠️ ADVERTENCIA: El hash generado no verifica correctamente")
             
             rol = 'cliente'
             token = str(uuid.uuid4())
@@ -242,7 +231,7 @@ Si no solicitaste este cambio, ignora este mensaje."""
                     flash("✅ Correo de recuperación enviado exitosamente", "success")
                 except Exception as e:
                     flash("❌ Error al enviar el correo. Intenta nuevamente", "danger")
-                    print(f"Error enviando correo: {e}")
+                    print(f"Error: {e}")
             else:
                 flash("⚠️ El correo no está registrado", "warning")
             
@@ -278,14 +267,8 @@ def reset_password(token):
             return redirect(request.url)
 
         try:
-            hashed = generate_password_hash(password1)
-            
-            # 🔍 DEBUG
-            print("=" * 50)
-            print("🔍 DEBUG - RESET PASSWORD:")
-            print(f"Correo: {correo}")
-            print(f"Nuevo hash length: {len(hashed)}")
-            print("=" * 50)
+            # Forzar PBKDF2 también aquí
+            hashed = generate_password_hash(password1, method='pbkdf2:sha256')
             
             cur = mysql.connection.cursor()
             cur.execute("UPDATE usuarios SET contraseña = %s WHERE correo = %s", (hashed, correo))
@@ -298,8 +281,6 @@ def reset_password(token):
             mysql.connection.rollback()
             flash(f"❌ Error al cambiar contraseña: {str(e)}", "danger")
             print(f"Error en reset_password: {e}")
-            import traceback
-            traceback.print_exc()
 
     return render_template("reset_password.html")
 
