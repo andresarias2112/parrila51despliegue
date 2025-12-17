@@ -189,20 +189,26 @@ def agregar_producto():
 
     if request.method == 'POST':
         nombre = request.form['nombre']
-        cantidad = request.form['cantidad']
+        cantidad = int(request.form.get('cantidad', 0))
         precio = request.form['precio']
         
-        # Manejo de imagen
-        imagen_url = request.form.get('imagen_url', '')
+        # ✅ Manejo de imagen SOLO archivo local
+        imagen_url = ''
         if 'imagen_file' in request.files:
             file = request.files['imagen_file']
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                # Crear carpeta si no existe
                 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
                 imagen_url = f'/static/uploads/productos/{filename}'
+            else:
+                flash("⚠️ Debes seleccionar una imagen válida", "warning")
+                cur = mysql.connection.cursor()
+                cur.execute("SELECT * FROM categorias ORDER BY nombre_categoria")
+                categorias = cur.fetchall()
+                cur.close()
+                return render_template('editar_producto.html', producto=None, categorias=categorias)
 
         try:
             cur = mysql.connection.cursor()
@@ -220,10 +226,11 @@ def agregar_producto():
             mysql.connection.commit()
             cur.close()
 
-            flash(f"✅ Producto '{nombre}' agregado correctamente", "success")
+            flash(f"✅ Producto '{nombre}' agregado con {cantidad} unidades en stock", "success")
             return redirect(url_for('admin.admin_productos'))
             
         except Exception as e:
+            mysql.connection.rollback()
             flash(f"❌ Error al agregar producto: {str(e)}", "danger")
 
     cur = mysql.connection.cursor()
@@ -245,47 +252,91 @@ def editar_producto(id_producto):
     cur.execute("SELECT * FROM productos WHERE id_producto = %s", (id_producto,))
     producto = cur.fetchone()
 
+    if not producto:
+        flash("⚠️ Producto no encontrado", "warning")
+        cur.close()
+        return redirect(url_for('admin.admin_productos'))
+
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        
-        # Manejo de imagen
-        imagen_url = request.form.get('imagen_url', producto.get('imagen', ''))
-        if 'imagen_file' in request.files:
-            file = request.files['imagen_file']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-                filepath = os.path.join(UPLOAD_FOLDER, filename)
-                file.save(filepath)
-                imagen_url = f'/static/uploads/productos/{filename}'
-        
         try:
+            nombre = request.form.get('nombre', '').strip()
+            descripcion = request.form.get('descripcion', '').strip()
+            precio = request.form.get('precio', '0')
+            cod_categoria = request.form.get('cod_categoria', '')
+            cantidad_agregar = int(request.form.get('cantidad_agregar', 0))
+            
+            # Validaciones básicas
+            if not nombre or not descripcion or not precio or not cod_categoria:
+                flash("❌ Todos los campos obligatorios deben estar completos", "danger")
+                cur.execute("SELECT * FROM categorias ORDER BY nombre_categoria")
+                categorias = cur.fetchall()
+                cur.close()
+                return render_template('editar_producto.html', producto=producto, categorias=categorias)
+            
+            # ✅ Manejo de imagen SOLO archivo local
+            imagen_url = producto.get('imagen', '')  # Mantener imagen actual por defecto
+            
+            if 'imagen_file' in request.files:
+                file = request.files['imagen_file']
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                    filepath = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(filepath)
+                    imagen_url = f'/static/uploads/productos/{filename}'
+            
+            # ✅ Actualizar datos básicos (sin tocar la cantidad directamente)
             cur.execute("""
-                UPDATE productos SET nombre=%s, cantidad=%s, descripcion=%s, precio=%s,
+                UPDATE productos SET nombre=%s, descripcion=%s, precio=%s,
                                     cod_categoria=%s, imagen=%s
                 WHERE id_producto=%s
             """, (
                 nombre,
-                request.form['cantidad'],
-                request.form['descripcion'],
-                request.form['precio'],
-                request.form['cod_categoria'],
+                descripcion,
+                float(precio),
+                int(cod_categoria),
                 imagen_url,
                 id_producto
             ))
-            mysql.connection.commit()
-            flash(f"✅ Producto '{nombre}' actualizado correctamente", "success")
+            
+            # ✅ Si ingresaron cantidad nueva, SUMAR al stock existente
+            if cantidad_agregar > 0:
+                stock_anterior = producto['cantidad']
+                
+                cur.execute("""
+                    UPDATE productos 
+                    SET cantidad = cantidad + %s 
+                    WHERE id_producto = %s
+                """, (cantidad_agregar, id_producto))
+                
+                nuevo_stock = stock_anterior + cantidad_agregar
+                mysql.connection.commit()
+                flash(f"✅ Producto '{nombre}' actualizado. Stock: {stock_anterior} → {nuevo_stock} (+{cantidad_agregar} unidades)", "success")
+            else:
+                mysql.connection.commit()
+                flash(f"✅ Producto '{nombre}' actualizado correctamente", "success")
+            
+            cur.close()
             return redirect(url_for('admin.admin_productos'))
             
+        except KeyError as e:
+            mysql.connection.rollback()
+            flash(f"❌ Falta el campo: {str(e)}", "danger")
+            print(f"KeyError: {e}")
+        except ValueError as e:
+            mysql.connection.rollback()
+            flash(f"❌ Valor inválido en un campo numérico: {str(e)}", "danger")
+            print(f"ValueError: {e}")
         except Exception as e:
+            mysql.connection.rollback()
             flash(f"❌ Error al actualizar producto: {str(e)}", "danger")
-
+            print(f"Error general: {e}")
+    
     cur.execute("SELECT * FROM categorias ORDER BY nombre_categoria")
     categorias = cur.fetchall()
     cur.close()
 
     return render_template('editar_producto.html', producto=producto, categorias=categorias)
-
 
 # ✅ CAMBIAR A ACTIVAR/DESACTIVAR EN LUGAR DE ELIMINAR
 @admin_bp.route('/admin/productos/toggle/<int:id_producto>', methods=['POST', 'GET'])
@@ -989,6 +1040,8 @@ def agregar_salida():
 # ===============================
 # HISTORIAL DE MOVIMIENTOS
 # ===============================
+# En admin_routes.py, reemplaza la función admin_movimientos:
+
 @admin_bp.route('/admin/movimientos')
 def admin_movimientos():
     es_admin, mensaje = verificar_admin()
@@ -1016,11 +1069,11 @@ def admin_movimientos():
         params.append(tipo_filtro)
     
     if fecha_desde:
-        query += " AND DATE(fecha) >= %s"
+        query += " AND DATE(STR_TO_DATE(fecha, '%Y-%m-%d %H:%i:%s')) >= %s"
         params.append(fecha_desde)
     
     if fecha_hasta:
-        query += " AND DATE(fecha) <= %s"
+        query += " AND DATE(STR_TO_DATE(fecha, '%Y-%m-%d %H:%i:%s')) <= %s"
         params.append(fecha_hasta)
     
     query += " ORDER BY fecha DESC LIMIT 200"
@@ -1044,6 +1097,50 @@ def admin_movimientos():
                              'fecha_hasta': fecha_hasta
                          })
 
+# ===============================
+# CONSULTAR INSUMOS (NUEVA RUTA)
+# ===============================
+@admin_bp.route('/admin/insumos/consultar')
+def consultar_insumos():
+    es_admin, mensaje = verificar_admin()
+    if not es_admin:
+        flash(mensaje, 'danger')
+        return redirect(url_for('auth.login'))
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Obtener todos los insumos con sus subcategorías
+    cur.execute("""
+        SELECT i.id_insumo, i.nombre, i.cantidad, i.precio, 
+               i.fecha_vencimiento, i.lote,
+               s.nombre_subcategoria, i.subcategoria_id
+        FROM insumos i
+        LEFT JOIN subcategorias_insumos s ON i.subcategoria_id = s.id_subcategoria
+        ORDER BY i.cantidad ASC, i.nombre ASC
+    """)
+    insumos = cur.fetchall()
+    
+    # Obtener todas las subcategorías para el filtro
+    cur.execute("SELECT * FROM subcategorias_insumos ORDER BY nombre_subcategoria")
+    subcategorias = cur.fetchall()
+    
+    # Calcular estadísticas
+    total_insumos = len(insumos)
+    stock_normal = len([i for i in insumos if i['cantidad'] >= 5])
+    stock_bajo = len([i for i in insumos if 0 < i['cantidad'] < 5])
+    sin_stock = len([i for i in insumos if i['cantidad'] == 0])
+    
+    cur.close()
+    
+    return render_template('consultar_insumos.html',
+                         insumos=insumos,
+                         subcategorias=subcategorias,
+                         stats={
+                             'total': total_insumos,
+                             'normal': stock_normal,
+                             'bajo': stock_bajo,
+                             'sin': sin_stock
+                         })
 
 def init_app(app):
     app.register_blueprint(admin_bp)

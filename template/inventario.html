@@ -486,9 +486,7 @@
             <button class="tab-button active" onclick="showTab('productos')">
                 <i class="fas fa-box"></i> Productos
             </button>
-            <button class="tab-button" onclick="showTab('insumos')">
-                <i class="fas fa-carrot"></i> Insumos
-            </button>
+           
             <button class="tab-button" onclick="showTab('mesas')">
                 <i class="fas fa-chair"></i> Mesas
             </button>
@@ -590,51 +588,7 @@
         </div>
 
         <!-- TAB INSUMOS -->
-        <div id="insumos" class="tab-content">
-            <div class="add-button-container">
-                <a href="{{ url_for('admin.agregar_insumo') }}" class="btn">
-                    <i class="fas fa-plus-circle"></i> Agregar Insumo
-                </a>
-            </div>
-            
-            <div class="insumos-grid">
-                {% for i in insumos %}
-                <div class="item-card {% if i.cantidad < 5 %}stock-bajo{% endif %}">
-                    <h3><i class="fas fa-seedling"></i> {{ i.nombre }}</h3>
-                    
-                    {% if i.cantidad < 5 %}
-                        <span class="badge badge-warning">
-                            <i class="fas fa-exclamation-triangle"></i> STOCK BAJO
-                        </span>
-                    {% else %}
-                        <span class="badge badge-success">
-                            <i class="fas fa-check-circle"></i> STOCK OK
-                        </span>
-                    {% endif %}
-                    
-                    <p><strong><i class="fas fa-warehouse"></i> Cantidad:</strong> {{ i.cantidad }}</p>
-                    <p><strong><i class="fas fa-dollar-sign"></i> Precio:</strong> ${{ "{:,.0f}".format(i.precio) }}</p>
-                    <p><strong><i class="fas fa-list"></i> Subcategoría:</strong> {{ i.nombre_subcategoria or 'N/A' }}</p>
-                    
-                    {% if i.fecha_vencimiento %}
-                    <p><strong><i class="fas fa-calendar-times"></i> Vencimiento:</strong> {{ i.fecha_vencimiento }}</p>
-                    {% endif %}
-                    
-                    <div style="margin-top: 15px;">
-                        <a href="{{ url_for('admin.editar_insumo', id_insumo=i.id_insumo) }}" 
-                           class="btn btn-editar">
-                           <i class="fas fa-edit"></i> Editar
-                        </a>
-                        <a href="{{ url_for('admin.eliminar_insumo', id_insumo=i.id_insumo) }}" 
-                           class="btn btn-eliminar" 
-                           onclick="return confirm('¿Eliminar este insumo?')">
-                           <i class="fas fa-trash"></i> Eliminar
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+        
 
         <!-- TAB MESAS -->
         <div id="mesas" class="tab-content">

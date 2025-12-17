@@ -132,6 +132,7 @@
       text-align: left;
       font-weight: bold;
       border-bottom: 2px solid #ff4444;
+      white-space: nowrap;
     }
 
     td {
@@ -163,6 +164,15 @@
     .stock-agotado {
       background-color: #dc3545;
       color: white;
+    }
+
+    .lote-badge {
+      background-color: #17a2b8;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
     }
 
     .btn-export {
@@ -314,6 +324,7 @@
               <th>Producto</th>
               <th>Categoría</th>
               <th>Stock</th>
+              <th>Lote</th>
               <th>Precio</th>
               <th>Valor Total</th>
               <th>Estado</th>
@@ -327,6 +338,11 @@
               <td>{{ prod.nombre }}</td>
               <td>{{ prod.nombre_categoria or 'Sin categoría' }}</td>
               <td><strong>{{ prod.cantidad }}</strong></td>
+              <td>
+                <span class="lote-badge">
+                  📋 {{ prod.lote_actual }}
+                </span>
+              </td>
               <td>${{ "{:,.0f}".format(prod.precio) }}</td>
               <td><strong>${{ "{:,.0f}".format(prod.cantidad * prod.precio) }}</strong></td>
               <td>

@@ -7,34 +7,360 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cliente_carrito.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
-    .opciones {
-      background: var(--bg-card);
+    /* Estilos mejorados para el carrito */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
       padding: 20px;
-      border-radius: 10px;
-      margin: 20px 0;
     }
-    .opciones h4 {
+
+    h2 {
       color: var(--color-gold);
-      margin-bottom: 15px;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2rem;
     }
-    .opciones label {
-      display: block;
-      margin: 10px 0;
+
+    /* Tabla de productos */
+    table {
+      width: 100%;
+      background: var(--bg-card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    thead {
+      background: linear-gradient(135deg, #d4af37, #c9a847);
+    }
+
+    th {
+      color: #000;
+      padding: 15px;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.1);
       color: var(--text-primary);
     }
+
+    tbody tr:hover {
+      background: rgba(212, 175, 55, 0.05);
+    }
+
+    /* Total */
+    #total {
+      text-align: right;
+      font-size: 1.5rem;
+      color: var(--color-gold);
+      margin: 20px 0;
+      padding: 15px;
+      background: var(--bg-card);
+      border-radius: 10px;
+    }
+
+    /* Secciones de opciones */
+    .seccion-opciones {
+      background: var(--bg-card);
+      padding: 25px;
+      border-radius: 12px;
+      margin: 25px 0;
+      border: 2px solid rgba(212, 175, 55, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .seccion-opciones:hover {
+      border-color: var(--color-gold);
+      box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+    }
+
+    .seccion-opciones h4 {
+      color: var(--color-gold);
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .seccion-opciones h4::before {
+      font-size: 1.5rem;
+    }
+
+    /* Acompañamientos */
+    .grid-acompanamientos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .acomp-item {
+      background: rgba(212, 175, 55, 0.05);
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .acomp-item:hover {
+      background: rgba(212, 175, 55, 0.1);
+      border-color: var(--color-gold);
+      transform: translateY(-2px);
+    }
+
+    .acomp-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--color-gold);
+    }
+
+    .acomp-item.seleccionado {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: var(--color-gold);
+    }
+
+    .acomp-info {
+      flex: 1;
+    }
+
+    .nombre-acomp {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .precio-acomp {
+      color: var(--color-gold);
+      font-size: 0.95rem;
+    }
+
+    /* Tipo de entrega */
+    .opciones-entrega {
+      display: flex;
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .opcion-entrega {
+      flex: 1;
+      background: rgba(212, 175, 55, 0.05);
+      padding: 20px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .opcion-entrega:hover {
+      border-color: var(--color-gold);
+      background: rgba(212, 175, 55, 0.1);
+      transform: translateY(-3px);
+    }
+
+    .opcion-entrega.activa {
+      border-color: var(--color-gold);
+      background: rgba(212, 175, 55, 0.15);
+    }
+
+    .opcion-entrega input[type="radio"] {
+      display: none;
+    }
+
+    .opcion-entrega-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .opcion-entrega-icon {
+      font-size: 2.5rem;
+    }
+
+    .opcion-entrega-texto {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+
+    /* Datos de domicilio */
+    #datos-domicilio {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(212, 175, 55, 0.05);
+      border-radius: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #datos-domicilio label {
+      display: block;
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    #datos-domicilio input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid rgba(212, 175, 55, 0.3);
+      border-radius: 8px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 1rem;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    #datos-domicilio input:focus {
+      outline: none;
+      border-color: var(--color-gold);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+
+    /* Método de pago */
+    .opciones-pago {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .opcion-pago {
+      flex: 1;
+      background: rgba(212, 175, 55, 0.05);
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .opcion-pago:hover {
+      border-color: var(--color-gold);
+      background: rgba(212, 175, 55, 0.1);
+    }
+
+    .opcion-pago.activa {
+      border-color: var(--color-gold);
+      background: rgba(212, 175, 55, 0.15);
+    }
+
+    .opcion-pago input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--color-gold);
+    }
+
+    /* Botones */
     .confirmar {
-      background: var(--color-gold);
+      background: linear-gradient(135deg, var(--color-gold), #c9a847);
       color: #000;
-      padding: 12px 30px;
+      padding: 15px 40px;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       font-weight: bold;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 1.1rem;
+      width: 100%;
+      margin-top: 30px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    }
+
+    .confirmar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+    }
+
+    .btn-eliminar {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-eliminar:hover {
+      background: #c82333;
+      transform: scale(1.05);
+    }
+
+    .volver {
+      display: inline-block;
+      padding: 12px 30px;
+      background: rgba(212, 175, 55, 0.1);
+      color: var(--color-gold);
+      text-decoration: none;
+      border-radius: 8px;
+      border: 2px solid var(--color-gold);
+      transition: all 0.3s ease;
       margin-top: 20px;
     }
-    .confirmar:hover {
-      background: var(--color-gold-hover);
+
+    .volver:hover {
+      background: var(--color-gold);
+      color: #000;
+      transform: translateX(-5px);
+    }
+
+    /* Alerta de selección */
+    .contador-seleccion {
+      display: inline-block;
+      background: var(--color-gold);
+      color: #000;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-left: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .grid-acompanamientos {
+        grid-template-columns: 1fr;
+      }
+
+      .opciones-entrega {
+        flex-direction: column;
+      }
+
+      table {
+        font-size: 0.9rem;
+      }
+
+      th, td {
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -56,7 +382,7 @@
   <div class="container">
     <h2>🛒 Tu Carrito</h2>
     {% if carrito %}
-    <form method="POST" action="{{ url_for('cliente.hacer_pedido') }}">
+    <form method="POST" action="{{ url_for('cliente.hacer_pedido') }}" id="formCarrito">
 
       <table>
         <thead>
@@ -71,13 +397,13 @@
         <tbody>
           {% for item in carrito %}
           <tr>
-            <td>{{ item.nombre }}</td>
+            <td><strong>{{ item.nombre }}</strong></td>
             <td>{{ item.cantidad }}</td>
             <td>${{ "{:,.0f}".format(item.precio).replace(",", ".") }}</td>
-            <td>${{ "{:,.0f}".format(item.precio * item.cantidad).replace(",", ".") }}</td>
+            <td><strong>${{ "{:,.0f}".format(item.precio * item.cantidad).replace(",", ".") }}</strong></td>
             <td>
               <a href="{{ url_for('cliente.eliminar_carrito', id_producto=item.id_producto) }}">
-                <button type="button" class="btn btn-eliminar">❌</button>
+                <button type="button" class="btn-eliminar">❌</button>
               </a>
             </td>
           </tr>
@@ -87,50 +413,173 @@
       
       <h3 id="total">Total: ${{ "{:,.0f}".format(total).replace(",", ".") }}</h3>
 
-      <div class="opciones" id="acompaniamientos">
-        <h4 id="titulo-acomp">🍽️ Escoge 2 acompañamientos (obligatorio)</h4>
-        {% for a in acompanamientos %}
-        <label>
-          <input 
-            type="checkbox" 
-            name="acompanamientos" 
-            value="{{ a.id_producto }}" 
-            data-precio="{{ a.precio }}"
-            data-nombre="{{ a.nombre|lower }}"
-          >
-          <span class="nombre-acomp">{{ a.nombre }}</span> - ${{ "{:,.0f}".format(a.precio).replace(",", ".") }}
-        </label><br>
-        {% endfor %}
+      <!-- ACOMPAÑAMIENTOS -->
+      <div class="seccion-opciones">
+        <h4>
+          🍽️ Escoge 2 acompañamientos 
+          <span class="contador-seleccion" id="contadorAcomp">0/2</span>
+        </h4>
+        <div class="grid-acompanamientos" id="gridAcompanamientos">
+          {% for a in acompanamientos %}
+          <label class="acomp-item" data-acomp="{{ a.id_producto }}">
+            <input 
+              type="checkbox" 
+              name="acompanamientos" 
+              value="{{ a.id_producto }}" 
+              data-precio="{{ a.precio }}"
+              data-nombre="{{ a.nombre|lower }}"
+            >
+            <div class="acomp-info">
+              <span class="nombre-acomp">{{ a.nombre }}</span>
+              <span class="precio-acomp">${{ "{:,.0f}".format(a.precio).replace(",", ".") }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
       </div>
 
-      <div style="margin-top: 15px;">
-        <label><input type="radio" name="tipo_entrega" value="restaurante" checked onchange="mostrarCampos()"> En mesa</label>
-        <label><input type="radio" name="tipo_entrega" value="domicilio" onchange="mostrarCampos()"> Domicilio</label>
+      <!-- TIPO DE ENTREGA -->
+      <div class="seccion-opciones">
+        <h4>📍 Tipo de entrega</h4>
+        <div class="opciones-entrega">
+          <label class="opcion-entrega activa" data-tipo="restaurante">
+            <input type="radio" name="tipo_entrega" value="restaurante" checked>
+            <div class="opcion-entrega-content">
+              <div class="opcion-entrega-icon">🍴</div>
+              <div class="opcion-entrega-texto">En mesa</div>
+            </div>
+          </label>
+          <label class="opcion-entrega" data-tipo="domicilio">
+            <input type="radio" name="tipo_entrega" value="domicilio">
+            <div class="opcion-entrega-content">
+              <div class="opcion-entrega-icon">🏠</div>
+              <div class="opcion-entrega-texto">Domicilio</div>
+            </div>
+          </label>
+        </div>
       </div>
 
-      <div id="datos-domicilio" style="display: none; margin-top: 10px;">
+      <!-- DATOS DE DOMICILIO -->
+      <div id="datos-domicilio" style="display: none;">
         <label for="direccion">🏠 Dirección de entrega</label>
-        <p><input type="text" name="direccion" id="direccion" placeholder="Ingresa tu dirección"></p>
+        <input type="text" name="direccion" id="direccion" placeholder="Ingresa tu dirección completa">
+        
         <label for="telefono_envio">📞 Teléfono de contacto</label>
-        <p><input type="tel" name="telefono_envio" id="telefono_envio" pattern="[0-9]{10}" placeholder="Ej: 3112345678"></p>
+        <input type="tel" name="telefono_envio" id="telefono_envio" pattern="[0-9]{10}" placeholder="Ej: 3112345678">
       </div>
 
-      <div class="opciones">
+      <!-- MÉTODO DE PAGO -->
+      <div class="seccion-opciones">
         <h4>💳 Método de pago</h4>
-        <label><input type="radio" name="metodo_pago" value="efectivo" checked> Efectivo</label>
+        <div class="opciones-pago">
+          <label class="opcion-pago activa">
+            <input type="radio" name="metodo_pago" value="efectivo" checked>
+            <span>💵 Efectivo</span>
+          </label>
+        </div>
       </div>
 
       <button type="submit" class="confirmar">Confirmar Pedido</button>
     </form>
     {% else %}
-    <p>Tu carrito está vacío.</p>
+    <p style="text-align: center; color: var(--text-primary); font-size: 1.2rem; padding: 40px;">Tu carrito está vacío.</p>
     {% endif %}
+    
     <div class="text-center mt-4">
-      <a href="{{ url_for('dashboard.cliente_dashboard') }}" class="volver">⬅ Volver</a>
+      <a href="{{ url_for('dashboard.cliente_dashboard') }}" class="volver">⬅️ Volver</a>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="{{ url_for('static', filename='js/cliente_carrito.js') }}"></script>
+  <script>
+    // Control de acompañamientos
+    const checkboxes = document.querySelectorAll('input[name="acompanamientos"]');
+    const contadorAcomp = document.getElementById('contadorAcomp');
+    const gridAcompanamientos = document.getElementById('gridAcompanamientos');
+
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const seleccionados = document.querySelectorAll('input[name="acompanamientos"]:checked').length;
+        contadorAcomp.textContent = `${seleccionados}/2`;
+        
+        // Actualizar visualización
+        const label = this.closest('.acomp-item');
+        if (this.checked) {
+          label.classList.add('seleccionado');
+        } else {
+          label.classList.remove('seleccionado');
+        }
+
+        // Limitar a 2 selecciones
+        if (seleccionados >= 2) {
+          checkboxes.forEach(cb => {
+            if (!cb.checked) {
+              cb.disabled = true;
+              cb.closest('.acomp-item').style.opacity = '0.5';
+              cb.closest('.acomp-item').style.cursor = 'not-allowed';
+            }
+          });
+        } else {
+          checkboxes.forEach(cb => {
+            cb.disabled = false;
+            cb.closest('.acomp-item').style.opacity = '1';
+            cb.closest('.acomp-item').style.cursor = 'pointer';
+          });
+        }
+      });
+    });
+
+    // Control de tipo de entrega
+    const opcionesEntrega = document.querySelectorAll('.opcion-entrega');
+    const datosDomicilio = document.getElementById('datos-domicilio');
+
+    opcionesEntrega.forEach(opcion => {
+      opcion.addEventListener('click', function() {
+        opcionesEntrega.forEach(o => o.classList.remove('activa'));
+        this.classList.add('activa');
+        this.querySelector('input').checked = true;
+
+        const tipo = this.dataset.tipo;
+        if (tipo === 'domicilio') {
+          datosDomicilio.style.display = 'block';
+        } else {
+          datosDomicilio.style.display = 'none';
+        }
+      });
+    });
+
+    // Validación del formulario
+    document.getElementById('formCarrito').addEventListener('submit', function(e) {
+      const seleccionados = document.querySelectorAll('input[name="acompanamientos"]:checked').length;
+      
+      if (seleccionados !== 2) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Acompañamientos incompletos',
+          text: 'Debes seleccionar exactamente 2 acompañamientos',
+          confirmButtonColor: '#d4af37'
+        });
+        return false;
+      }
+
+      const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
+      if (tipoEntrega === 'domicilio') {
+        const direccion = document.getElementById('direccion').value.trim();
+        const telefono = document.getElementById('telefono_envio').value.trim();
+        
+        if (!direccion || !telefono) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'warning',
+            title: 'Datos incompletos',
+            text: 'Completa la dirección y teléfono para domicilio',
+            confirmButtonColor: '#d4af37'
+          });
+          return false;
+        }
+      }
+    });
+  </script>
 </body>
 </html>

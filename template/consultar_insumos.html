@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultar Insumos - Parrilla 51</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2f2f2f 0%, #3a3a3a 100%);
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+
+        .header-container {
+            background: linear-gradient(90deg, #1f1f1f 0%, #2f2f2f 100%);
+            border-bottom: 4px solid #ffd700;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            height: 50px;
+            filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.3));
+        }
+
+        .nombre-logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #1f1f1f;
+            padding: 10px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 215, 0, 0.5);
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            font-size: 36px;
+            margin: 30px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .filtros {
+            background: linear-gradient(135deg, #2f2f2f 0%, #1f1f1f 100%);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filtros input, .filtros select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            background: #1f1f1f;
+            color: white;
+            font-size: 14px;
+        }
+
+        .filtros input:focus, .filtros select:focus {
+            outline: none;
+            border-color: #ffed4e;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #2f2f2f 0%, #1f1f1f 100%);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #ffd700;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .numero {
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .table-container {
+            background: linear-gradient(135deg, #2f2f2f 0%, #1f1f1f 100%);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        }
+
+        thead th {
+            color: #1f1f1f;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 3px solid #ff4444;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #444;
+            transition: all 0.3s;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        tbody td {
+            padding: 12px 15px;
+            color: #f0f0f0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: #1f1f1f;
+        }
+
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .acciones {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-editar {
+            background: #17a2b8;
+        }
+
+        .btn-eliminar {
+            background: #dc3545;
+        }
+
+        footer {
+            background: linear-gradient(90deg, #1f1f1f 0%, #2f2f2f 100%);
+            color: #fff;
+            text-align: center;
+            padding: 25px;
+            border-top: 4px solid #ffd700;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .filtros {
+                flex-direction: column;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            thead th, tbody td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <nav class="navbar">
+            <div class="header">
+                <img src="/static/image.png" alt="Logo" class="logo">
+                <h1 class="nombre-logo">Consultar Insumos</h1>
+            </div>
+            <div>
+                <a href="/admin/insumos/agregar" class="btn" style="margin-right: 10px;">
+                    <i class="fas fa-plus-circle"></i> Agregar Insumo
+                </a>
+                <a href="/admin/dashboard" class="btn">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <main>
+        <h1><i class="fas fa-carrot"></i> consultar Insumos</h1>
+
+        <!-- Estadísticas -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3><i class="fas fa-boxes"></i> Total Insumos</h3>
+                <div class="numero" id="totalInsumos">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-check-circle"></i> Stock Normal</h3>
+                <div class="numero" id="stockNormal" style="color: #28a745;">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-exclamation-triangle"></i> Stock Bajo</h3>
+                <div class="numero" id="stockBajo" style="color: #ffc107;">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-times-circle"></i> Sin Stock</h3>
+                <div class="numero" id="sinStock" style="color: #dc3545;">0</div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros">
+            <input type="text" id="buscarInsumo" placeholder="🔍 Buscar por nombre...">
+            <select id="filtroSubcategoria">
+                <option value="">📁 Todas las subcategorías</option>
+            </select>
+            <select id="filtroStock">
+                <option value="">📊 Todos los stocks</option>
+                <option value="normal">Stock Normal (≥5)</option>
+                <option value="bajo">Stock Bajo (1-4)</option>
+                <option value="sin">Sin Stock (0)</option>
+            </select>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> ID</th>
+                        <th><i class="fas fa-box"></i> Nombre</th>
+                        <th><i class="fas fa-list"></i> Subcategoría</th>
+                        <th><i class="fas fa-warehouse"></i> Cantidad</th>
+                        <th><i class="fas fa-dollar-sign"></i> Precio Unit.</th>
+                        <th><i class="fas fa-calculator"></i> Valor Total</th>
+                        <th><i class="fas fa-calendar-times"></i> Vencimiento</th>
+                        <th><i class="fas fa-barcode"></i> Lote</th>
+                        <th><i class="fas fa-traffic-light"></i> Estado</th>
+                        <th><i class="fas fa-tools"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaInsumos">
+                    <!-- Se llenará con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+        <i class="fas fa-fire"></i> © 2025 Parrilla 51 - Sistema de Gestión de Insumos
+    </footer>
+
+    <script>
+        // Datos desde el backend
+        const insumos = {{ insumos | tojson }};
+
+        function formatearPrecio(precio) {
+            return '$' + precio.toLocaleString('es-CO');
+        }
+
+        function obtenerEstadoStock(cantidad) {
+            if (cantidad === 0) return '<span class="badge badge-danger"><i class="fas fa-times-circle"></i> SIN STOCK</span>';
+            if (cantidad < 5) return '<span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> STOCK BAJO</span>';
+            return '<span class="badge badge-success"><i class="fas fa-check-circle"></i> STOCK OK</span>';
+        }
+
+        function renderizarTabla(datos) {
+            const tbody = document.getElementById('tablaInsumos');
+            tbody.innerHTML = '';
+
+            if (datos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px; color: #ffc107;">No se encontraron insumos</td></tr>';
+                return;
+            }
+
+            datos.forEach(insumo => {
+                const valorTotal = insumo.cantidad * insumo.precio;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${insumo.id}</td>
+                    <td><strong>${insumo.nombre}</strong></td>
+                    <td>${insumo.subcategoria}</td>
+                    <td><strong>${insumo.cantidad}</strong></td>
+                    <td>${formatearPrecio(insumo.precio)}</td>
+                    <td><strong>${formatearPrecio(valorTotal)}</strong></td>
+                    <td>${insumo.vencimiento || '<em style="color: #888;">No aplica</em>'}</td>
+                    <td>${insumo.lote}</td>
+                    <td>${obtenerEstadoStock(insumo.cantidad)}</td>
+                    <td class="acciones">
+                        <a href="/admin/insumos/editar/${insumo.id}" class="btn btn-sm btn-editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="/admin/insumos/eliminar/${insumo.id}" class="btn btn-sm btn-eliminar" 
+                           onclick="return confirm('¿Eliminar este insumo?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarEstadisticas(datos) {
+            document.getElementById('totalInsumos').textContent = datos.length;
+            document.getElementById('stockNormal').textContent = datos.filter(i => i.cantidad >= 5).length;
+            document.getElementById('stockBajo').textContent = datos.filter(i => i.cantidad > 0 && i.cantidad < 5).length;
+            document.getElementById('sinStock').textContent = datos.filter(i => i.cantidad === 0).length;
+        }
+
+        function aplicarFiltros() {
+            const busqueda = document.getElementById('buscarInsumo').value.toLowerCase();
+            const subcategoria = document.getElementById('filtroSubcategoria').value;
+            const stock = document.getElementById('filtroStock').value;
+
+            let datosFiltrados = insumos.filter(insumo => {
+                const coincideNombre = insumo.nombre.toLowerCase().includes(busqueda);
+                const coincideSubcategoria = !subcategoria || insumo.subcategoria === subcategoria;
+                
+                let coincideStock = true;
+                if (stock === 'normal') coincideStock = insumo.cantidad >= 5;
+                else if (stock === 'bajo') coincideStock = insumo.cantidad > 0 && insumo.cantidad < 5;
+                else if (stock === 'sin') coincideStock = insumo.cantidad === 0;
+
+                return coincideNombre && coincideSubcategoria && coincideStock;
+            });
+
+            renderizarTabla(datosFiltrados);
+            actualizarEstadisticas(datosFiltrados);
+        }
+
+        function cargarSubcategorias() {
+            const subcategorias = [...new Set(insumos.map(i => i.subcategoria))].sort();
+            const select = document.getElementById('filtroSubcategoria');
+            
+            subcategorias.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                select.appendChild(option);
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('buscarInsumo').addEventListener('input', aplicarFiltros);
+        document.getElementById('filtroSubcategoria').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroStock').addEventListener('change', aplicarFiltros);
+
+        // Inicializar
+        cargarSubcategorias();
+        renderizarTabla(insumos);
+        actualizarEstadisticas(insumos);
+    </script>
+</body>
+</html>

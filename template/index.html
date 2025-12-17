@@ -1,76 +1,334 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar Sesión - Parrilla 51</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parrilla 51</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2e2e2e;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #1e1e1e;
+            border-bottom: 2px solid #f1c40f;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header img {
+            width: 70px;
+            border-radius: 10px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 32px;
+            color: #f1c40f;
+            font-weight: bold;
+        }
+
+        /* HERO */
+        .hero {
+            text-align: center;
+            padding: 180px 20px;
+            background: url("{{ url_for('static', filename='carne.jpg') }}");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero h2 {
+            font-size: 48px;
+            color: #fff;
+            text-shadow: 0 0 8px #000;
+            margin: 0;
+        }
+
+        .hero p {
+            font-size: 20px;
+            margin-top: 15px;
+            color: #f1f1f1;
+            text-shadow: 0 0 6px #000;
+        }
+
+        .btn-primario {
+            margin-top: 25px;
+            background-color: #f1c40f;
+            padding: 12px 28px;
+            border-radius: 8px;
+            color: #333;
+            font-weight: bold;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primario:hover { background-color: #d4ac0d; }
+
+        /* MAPA SECTION */
+        .info {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .info h3 {
+            color: #f1c40f;
+            font-size: 32px;
+            margin-bottom: 25px;
+        }
+
+        .mapa {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* SLIDER + TEXTO */
+        .panel-servicios {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 60px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+            border-radius: 12px;
+            margin: 40px auto;
+            max-width: 1100px;
+        }
+
+        .slider-box {
+            width: 420px;
+            height: 300px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+        }
+
+        .slider-box-inner {
+            display: flex;
+            width: 300%;
+            height: 100%;
+            animation: slide 12s infinite;
+        }
+
+        .slider-box-inner img {
+            width: 100%;
+            object-fit: cover;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(0%); }
+            33% { transform: translateX(-100%); }
+            66% { transform: translateX(-200%); }
+            100% { transform: translateX(0%); }
+        }
+
+        .texto-servicios {
+            max-width: 450px;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        /* REVEAL */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s ease;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        footer {
+            background-color: #1e1e1e;
+            padding: 20px;
+            margin-top: 50px;
+            text-align: center;
+            border-top: 2px solid #f1c40f;
+        }
+    </style>
 </head>
-<body>
+<!-- Agregar antes de </body> -->
+<style>
+    .help-float-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);
+        transition: all 0.3s ease;
+        z-index: 9999;
+        border: 3px solid #fff;
+        text-decoration: none;
+    }
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="container mt-3">
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
+    .help-float-btn:hover {
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 6px 25px rgba(241, 196, 15, 0.6);
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
 
-<div class="container d-flex align-items-center justify-content-center vh-100">
-  <div class="card shadow-lg" style="width: 100%; max-width: 400px;">
-    <div class="card-body">
-      <h2 class="text-center mb-4">Iniciar Sesión</h2>
-      
-      {% if mensaje %}
-      <div class="alert alert-danger text-center" role="alert">
-          {{ mensaje }}
-      </div>
-      {% endif %}
+    .help-float-btn i {
+        font-size: 32px;
+        color: #1e1e1e;
+        font-weight: bold;
+    }
 
-      <form action="{{ url_for('auth.login') }}" method="post">
-        <div class="mb-3">
-          <label for="correo" class="form-label">Correo</label>
-          <input type="email" class="form-control" id="correo" name="txtCorreo" placeholder="Ingrese su correo" required>
-        </div>
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4); }
+        50% { box-shadow: 0 4px 25px rgba(241, 196, 15, 0.8); }
+    }
 
-        <div class="mb-3" style="position: relative;">
-          <label for="password" class="form-label">Contraseña</label>
-          <input type="password" class="form-control" id="password" name="txtPassword" placeholder="Ingrese su contraseña" required>
-          <i class="bi bi-eye toggle-password" id="togglePassword" style="position: absolute; right: 12px; top: 38px; cursor: pointer;"></i>
-        </div>
+    .help-float-btn.pulse {
+        animation: pulse 2s infinite;
+    }
 
-        <div class="d-grid gap-2">
-          <button type="submit" class="btn btn-primary btn-lg">Ingresar</button>
-        </div>
+    .help-float-btn::before {
+        content: "📖 Manual de Usuario";
+        position: absolute;
+        right: 70px;
+        background: #1e1e1e;
+        color: #f1c40f;
+        padding: 8px 15px;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
 
-        <div class="text-center mt-3">
-          <a href="{{ url_for('auth.registro') }}" class="btn btn-link">¿No tienes cuenta? Regístrate aquí</a>
-          <br>
-          <a href="{{ url_for('auth.forgot_password') }}" style="color: var(--color-gold);">¿Olvidaste tu contraseña?</a>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+    .help-float-btn:hover::before {
+        opacity: 1;
+        visibility: visible;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @media (max-width: 768px) {
+        .help-float-btn {
+            width: 50px;
+            height: 50px;
+            bottom: 20px;
+            right: 20px;
+        }
+        .help-float-btn i {
+            font-size: 26px;
+        }
+    }
+</style>
+
+<!-- BOTÓN FLOTANTE -->
+<a href="{{ url_for('static', filename='manuales/Manual de usuario (1).pdf') }}" 
+   target="_blank" 
+   class="help-float-btn pulse">
+    <i>?</i>
+</a>
+
 <script>
-  const togglePassword = document.getElementById("togglePassword");
-  const passwordInput = document.getElementById("password");
-
-  togglePassword.addEventListener("click", function () {
-    const type = passwordInput.type === "password" ? "text" : "password";
-    passwordInput.type = type;
-    this.classList.toggle("bi-eye");
-    this.classList.toggle("bi-eye-slash");
-  });
+    setTimeout(() => {
+        document.querySelector('.help-float-btn')?.classList.remove('pulse');
+    }, 10000);
 </script>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='image.png') }}" alt="Logo Parrilla 51" />
+        <h1>Parrilla 51</h1>
+    </header>
+
+    <section class="hero">
+        <h2>Bienvenido a Parrilla 51</h2>
+        <p>Disfruta la auténtica experiencia gastronómica colombiana</p>
+
+        <div style="margin-top:30px; display:flex; justify-content:center; gap:20px;">
+            <a href="{{ url_for('auth.login') }}" class="btn-primario">Iniciar Sesión</a>
+            <a href="{{ url_for('auth.registro') }}" class="btn-primario" style="background:#fff; color:#000;">Registrarse</a>
+        </div>
+    </section>
+
+    <section class="panel-servicios reveal">
+        <div class="slider-box">
+            <div class="slider-box-inner" style="width:300%; height:100%; display:flex;">
+                <img src="{{ url_for('static', filename='rest1.jpeg') }}" style="width:100%; height:100%; object-fit:cover;" />
+                <img src="{{ url_for('static', filename='rest3.jpeg') }}" style="width:100%; height:100%; object-fit:cover;" />
+                <img src="{{ url_for('static', filename='rest4.jpeg') }}" style="width:100%; height:100%; object-fit:cover;" />
+            </div>
+        </div>
+
+        <div class="texto-servicios">
+            Parrilla 51 te ofrece un ambiente moderno, familiar y accesible, con espacios cómodos y estacionamiento gratuito. Disfruta de servicio a la mesa, almuerzos, cenas, pedidos para llevar y entregas a domicilio —incluida la opción sin contacto. Contamos con Wi-Fi gratis, zona ideal para familias y grupos, cambiadores para niños y pagos móviles NFC. Todo está pensado para brindarte una experiencia cómoda, segura y memorable.
+        </div>
+    </section>
+
+    <section class="info">
+        <h3>Nuestra Ubicación</h3>
+
+        <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap; margin-top:20px;">
+            <!-- MAPA -->
+            <div class="mapa">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3438.2310568228245!2d-74.07200772502108!3d4.638774895336003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f9a31a1676d23%3A0x172ac51ee811c026!2sParrilla%2051!5e1!3m2!1ses-419!2sco!4v1763090919886!5m2!1ses-419!2sco" 
+                        width="450" 
+                        height="320" 
+                        style="border:0; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.5);" 
+                        allowfullscreen 
+                        loading="lazy">
+                </iframe>
+            </div>
+
+            <!-- INFORMACIÓN DE CONTACTO -->
+            <div style="max-width:380px; text-align:left; font-size:18px; line-height:1.6;">
+                <h3 style="color:#f1c40f; margin-bottom:10px;">¿Tienes alguna duda?</h3>
+                <p>Contáctanos: <strong>2487990</strong></p>
+                <p><strong>Horarios:</strong><br>
+                Jueves a miércoles<br>
+                <strong>11:30 a.m. — 4:30 p.m.</strong>
+                </p>
+                <p style="margin-top:10px; font-size:20px; color:#f1c40f; font-weight:bold;">¡Te esperamos!</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        © 2025 Parrilla 51 • Todos los derechos reservados
+    </footer>
+
+    <script>
+        const revealElements = document.querySelectorAll('.reveal');
+        function revealOnScroll() {
+            const windowHeight = window.innerHeight;
+
+            revealElements.forEach(el => {
+                const revealTop = el.getBoundingClientRect().top;
+                if (revealTop < windowHeight - 100) {
+                    el.classList.add('active');
+                }
+            });
+        }
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll();
+    </script>
 </body>
 </html>

@@ -5,6 +5,95 @@
   <title>Panel Empleado - Parrilla 51</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
 </head>
+<!-- Agregar antes de </body> -->
+<style>
+    .help-float-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);
+        transition: all 0.3s ease;
+        z-index: 9999;
+        border: 3px solid #fff;
+        text-decoration: none;
+    }
+
+    .help-float-btn:hover {
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 6px 25px rgba(241, 196, 15, 0.6);
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+
+    .help-float-btn i {
+        font-size: 32px;
+        color: #1e1e1e;
+        font-weight: bold;
+    }
+
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4); }
+        50% { box-shadow: 0 4px 25px rgba(241, 196, 15, 0.8); }
+    }
+
+    .help-float-btn.pulse {
+        animation: pulse 2s infinite;
+    }
+
+    .help-float-btn::before {
+        content: "📖 Manual del Empleado";
+        position: absolute;
+        right: 70px;
+        background: #1e1e1e;
+        color: #f1c40f;
+        padding: 8px 15px;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .help-float-btn:hover::before {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    @media (max-width: 768px) {
+        .help-float-btn {
+            width: 50px;
+            height: 50px;
+            bottom: 20px;
+            right: 20px;
+        }
+        .help-float-btn i {
+            font-size: 26px;
+        }
+    }
+</style>
+
+<!-- BOTÓN FLOTANTE -->
+<a href="{{ url_for('static', filename='manuales/Manual de empleado.pdf') }}" 
+   target="_blank" 
+   class="help-float-btn pulse">
+    <i>?</i>
+</a>
+
+<script>
+    setTimeout(() => {
+        document.querySelector('.help-float-btn')?.classList.remove('pulse');
+    }, 10000);
+</script>
 <body>
 
   {% with messages = get_flashed_messages(with_categories=true) %}

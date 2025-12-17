@@ -72,7 +72,6 @@ def cliente_productos():
 
     try:
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        # ✅ Solo productos activos/disponibles
         cur.execute("""
             SELECT 
                 p.id_producto,
@@ -104,7 +103,12 @@ def agregar_carrito(id_producto):
         cantidad = int(request.form.get('cantidad', 1))
 
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute("SELECT * FROM productos WHERE id_producto = %s", (id_producto,))
+        cur.execute("""
+            SELECT p.*, c.nombre_categoria 
+            FROM productos p
+            LEFT JOIN categorias c ON p.cod_categoria = c.id_categoria
+            WHERE p.id_producto = %s
+        """, (id_producto,))
         producto = cur.fetchone()
         cur.close()
 
@@ -112,23 +116,19 @@ def agregar_carrito(id_producto):
             flash("⚠️ Producto no encontrado", "warning")
             return redirect(url_for('cliente.cliente_productos'))
 
-        # ✅ Validar stock disponible
         if producto['cantidad'] < cantidad:
             flash(f"⚠️ Stock insuficiente. Solo hay {producto['cantidad']} unidad(es) disponibles de {producto['nombre']}", "warning")
             return redirect(url_for('cliente.cliente_productos'))
 
-        # ✅ Validar estado del producto
         if producto['estado'] != 'Disponible':
             flash(f"⚠️ {producto['nombre']} no está disponible actualmente", "warning")
             return redirect(url_for('cliente.cliente_productos'))
 
         carrito = session.get('carrito', [])
         
-        # Verificar si ya existe en el carrito
         existe = False
         for item in carrito:
             if item['id_producto'] == id_producto:
-                # ✅ Validar stock total (carrito + nueva cantidad)
                 nueva_cantidad = item['cantidad'] + cantidad
                 if nueva_cantidad > producto['cantidad']:
                     flash(f"⚠️ Stock insuficiente. Solo hay {producto['cantidad']} unidad(es) disponibles de {producto['nombre']}", "warning")
@@ -143,7 +143,8 @@ def agregar_carrito(id_producto):
                 'id_producto': producto['id_producto'],
                 'nombre': producto['nombre'],
                 'precio': producto['precio'],
-                'cantidad': cantidad
+                'cantidad': cantidad,
+                'categoria': producto['nombre_categoria']  # ✅ Agregar categoría
             })
 
         session['carrito'] = carrito
@@ -166,21 +167,50 @@ def cliente_carrito():
     carrito = session.get('carrito', [])
     total = sum(item['precio'] * item['cantidad'] for item in carrito)
 
+    # ✅ Determinar categorías en el carrito
+    categorias_en_carrito = set(item.get('categoria', '') for item in carrito)
+    
+    # ✅ Lógica de acompañamientos recomendados
+    acompanamientos_recomendados = []
+    
+    if 'Res' in categorias_en_carrito or 'Cerdo' in categorias_en_carrito or 'Pollo' in categorias_en_carrito:
+        # Para carnes: recomendar acompañamientos que combinan
+        acompanamientos_nombres = ['Papa salada', 'Yuca cocida', 'Aguacate macerado con sal', 
+                                   'Arepa de maíz y queso', 'Ensalada de la casa', 'Arroz blanco']
+    elif 'Plato del día' in categorias_en_carrito:
+        # Para platos del día: acompañamientos tradicionales
+        acompanamientos_nombres = ['Aguacate macerado con sal', 'Arepa de maíz y queso', 
+                                   'Ensalada de la casa', 'Arroz blanco']
+    else:
+        # Por defecto: todos los acompañamientos
+        acompanamientos_nombres = ['Papa salada', 'Yuca cocida', 'Aguacate macerado con sal', 
+                                   'Arepa de maíz y queso', 'Ensalada de la casa', 'Arroz blanco']
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("""
-        SELECT p.* 
-        FROM productos p
-        LEFT JOIN categorias c ON p.cod_categoria = c.id_categoria
-        WHERE c.nombre_categoria = 'Acompañamientos' AND p.estado = 'Disponible' AND p.cantidad > 0
-    """)
-    acompanamientos = cur.fetchall()
+    
+    # Obtener acompañamientos según recomendación
+    if acompanamientos_nombres:
+        placeholders = ','.join(['%s'] * len(acompanamientos_nombres))
+        query = f"""
+            SELECT p.* 
+            FROM productos p
+            LEFT JOIN categorias c ON p.cod_categoria = c.id_categoria
+            WHERE c.nombre_categoria = 'Acompañamientos' 
+            AND p.nombre IN ({placeholders})
+            AND p.estado = 'Disponible' 
+            AND p.cantidad > 0
+            ORDER BY FIELD(p.nombre, {','.join(['%s'] * len(acompanamientos_nombres))})
+        """
+        cur.execute(query, acompanamientos_nombres + acompanamientos_nombres)
+        acompanamientos_recomendados = cur.fetchall()
+    
     cur.close()
 
     return render_template(
         'cliente_carrito.html',
         carrito=carrito,
         total=total,
-        acompanamientos=acompanamientos
+        acompanamientos=acompanamientos_recomendados
     )
 
 
@@ -242,10 +272,9 @@ def hacer_pedido():
     try:
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-        # ✅ VALIDAR STOCK ANTES DE CONFIRMAR
+        # Validar stock
         stock_insuficiente = []
         
-        # Validar productos del carrito
         for item in carrito:
             cur.execute("SELECT nombre, cantidad, estado FROM productos WHERE id_producto = %s", (item["id_producto"],))
             producto = cur.fetchone()
@@ -257,7 +286,6 @@ def hacer_pedido():
             elif producto["cantidad"] < item["cantidad"]:
                 stock_insuficiente.append(f"{item['nombre']} (solo quedan {producto['cantidad']} unidades)")
         
-        # Validar acompañamientos
         for id_acomp in acompanamientos_ids:
             cur.execute("SELECT nombre, cantidad, estado FROM productos WHERE id_producto = %s", (int(id_acomp),))
             acomp = cur.fetchone()
@@ -274,7 +302,7 @@ def hacer_pedido():
             cur.close()
             return redirect(url_for("cliente.cliente_carrito"))
 
-        # ✅ CREAR PEDIDO
+        # Crear pedido
         cur.execute("""
             INSERT INTO pedidos (
                 cod_usuario, fecha, hora, total, estado,
@@ -287,7 +315,7 @@ def hacer_pedido():
 
         id_pedido = cur.lastrowid
 
-        # ✅ INSERTAR PRODUCTOS Y REDUCIR STOCK
+        # Insertar productos y reducir stock
         for item in carrito:
             cur.execute("""
                 INSERT INTO detalle_pedido (
@@ -295,14 +323,13 @@ def hacer_pedido():
                 ) VALUES (%s, %s, %s, %s)
             """, (id_pedido, item["id_producto"], item["cantidad"], item["precio"]))
             
-            # ✅ REDUCIR STOCK
             cur.execute("""
                 UPDATE productos 
                 SET cantidad = cantidad - %s 
                 WHERE id_producto = %s
             """, (item["cantidad"], item["id_producto"]))
 
-        # ✅ INSERTAR ACOMPAÑAMIENTOS Y REDUCIR STOCK
+        # Insertar acompañamientos y reducir stock
         for id_acomp in acompanamientos_ids:
             cur.execute("""
                 INSERT INTO detalle_pedido (
@@ -310,7 +337,6 @@ def hacer_pedido():
                 ) VALUES (%s, %s, 1, 0)
             """, (id_pedido, int(id_acomp)))
             
-            # ✅ REDUCIR STOCK DE ACOMPAÑAMIENTO
             cur.execute("""
                 UPDATE productos 
                 SET cantidad = cantidad - 1 
@@ -467,18 +493,34 @@ def api_cambiar_contrasena():
 
     data = request.json
     user_id = session['id_usuario']
+    nueva_pass = data.get("newPass", "")
+
+    # ✅ Validaciones de seguridad
+    if len(nueva_pass) < 8:
+        return jsonify({"mensaje": "❌ La contraseña debe tener al menos 8 caracteres"}), 400
+    
+    if not any(c.isupper() for c in nueva_pass):
+        return jsonify({"mensaje": "❌ La contraseña debe contener al menos una mayúscula"}), 400
+    
+    if not any(c.islower() for c in nueva_pass):
+        return jsonify({"mensaje": "❌ La contraseña debe contener al menos una minúscula"}), 400
+    
+    if not any(c.isdigit() for c in nueva_pass):
+        return jsonify({"mensaje": "❌ La contraseña debe contener al menos un número"}), 400
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT contraseña FROM usuarios WHERE id_usuario=%s", (user_id,))
     user = cur.fetchone()
 
     if not user:
+        cur.close()
         return jsonify({"mensaje": "Usuario no encontrado"}), 404
 
     if not check_password_hash(user["contraseña"], data["oldPass"]):
+        cur.close()
         return jsonify({"mensaje": "❌ La contraseña actual es incorrecta"}), 400
 
-    nueva_hash = generate_password_hash(data["newPass"])
+    nueva_hash = generate_password_hash(nueva_pass)
 
     cur.execute("""
         UPDATE usuarios 
@@ -490,7 +532,6 @@ def api_cambiar_contrasena():
     cur.close()
 
     return jsonify({"mensaje": "✅ Contraseña cambiada correctamente"})
-
 
 def init_app(app):
     app.register_blueprint(cliente_bp)

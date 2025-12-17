@@ -165,11 +165,42 @@
                            value="{{ producto.precio if producto else '' }}" required>
                 </div>
 
+                <!-- ✅ Si es EDITAR (producto existe) -->
+                {% if producto %}
                 <div class="form-group">
-                    <label for="cantidad">Cantidad en Stock *</label>
-                    <input type="number" id="cantidad" name="cantidad" 
-                           value="{{ producto.cantidad if producto else '' }}" required>
+                    <label for="cantidad_actual">Cantidad Actual en Stock</label>
+                    <input type="number" id="cantidad_actual" name="cantidad_actual" 
+                           value="{{ producto.cantidad }}" 
+                           readonly 
+                           style="background: #333; cursor: not-allowed; border-color: #666;">
                 </div>
+
+                <div class="form-group">
+                    <label for="cantidad_agregar">¿Cuántas unidades han llegado? (Opcional)</label>
+                    <input type="number" id="cantidad_agregar" name="cantidad_agregar" 
+                           min="0" value="0" 
+                           placeholder="Ingresa la cantidad que llegó"
+                           oninput="calcularNuevoStock()">
+                    <small style="color: #999; display: block; margin-top: 5px;">
+                        💡 Si llegaron nuevas unidades, ingresa la cantidad aquí. El stock se actualizará automáticamente.
+                    </small>
+                </div>
+
+                <div id="preview_stock" style="display:none; background: #1a4d2e; padding: 15px; border-radius: 8px; margin: 10px 0; border: 2px solid #28a745;">
+                    <h4 style="color: #28a745; margin: 0 0 10px 0;">📊 Nuevo Stock Total</h4>
+                    <p style="color: #ffc107; font-size: 1.5rem; font-weight: bold; margin: 0;">
+                        <span id="stock_anterior">0</span> + <span id="stock_nuevo">0</span> = <span id="stock_total">0</span> unidades
+                    </p>
+                </div>
+
+                <!-- ✅ Si es AGREGAR (producto NO existe) -->
+                {% else %}
+                <div class="form-group">
+                    <label for="cantidad">Cantidad Inicial en Stock *</label>
+                    <input type="number" id="cantidad" name="cantidad" 
+                           value="0" min="0" required>
+                </div>
+                {% endif %}
 
                 <div class="form-group">
                     <label for="cod_categoria">Categoría *</label>
@@ -185,33 +216,40 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Imagen del Producto</label>
+    <label>Imagen del Producto *</label>
+    
+    {% if producto and producto.imagen %}
+    <div class="imagen-preview">
+        <img src="{{ producto.imagen }}" alt="Imagen actual" id="preview-img">
+        <p style="color: #ffc107; margin-top: 10px;">
+            📸 Imagen actual del producto
+        </p>
+    </div>
+    {% else %}
+    <div class="imagen-preview" id="preview-container" style="display:none;">
+        <img src="" alt="Vista previa" id="preview-img">
+    </div>
+    {% endif %}
+    
+    <label for="imagen_file" class="file-upload-btn">
+        📁 Seleccionar Imagen
+    </label>
+    <input type="file" id="imagen_file" name="imagen_file" 
+           accept="image/*" onchange="previewImage(event)" 
+           {% if not producto %}required{% endif %}>
+    
+    <small style="color: #999; display: block; margin-top: 8px;">
+        Formatos: JPG, PNG, GIF, WEBP (máx 5MB)
+    </small>
+</div>
                     
-                    {% if producto and producto.imagen %}
-                    <div class="imagen-preview">
-                        <img src="{{ producto.imagen }}" alt="Imagen actual" id="preview-img">
-                    </div>
+                    {% if producto %}
+                    <small style="color: #ff6b6b; display: block; margin-top: 8px; font-weight: bold;">
+                        ⚠️ Debes volver a seleccionar o confirmar la imagen antes de actualizar
+                    </small>
                     {% else %}
-                    <div class="imagen-preview" id="preview-container" style="display:none;">
-                        <img src="" alt="Vista previa" id="preview-img">
-                    </div>
-                    {% endif %}
-                    
-                    <div class="imagen-opciones">
-                        <label for="imagen_file" class="file-upload-btn">
-                            📁 Seleccionar Imagen Local
-                        </label>
-                        <input type="file" id="imagen_file" name="imagen_file" 
-                               accept="image/*" onchange="previewImage(event)">
-                        
-                        <span class="o-separador">O</span>
-                        
-                        <input type="url" id="imagen_url" name="imagen_url" 
-                               placeholder="URL de imagen" 
-                               value="{{ producto.imagen if producto else '' }}"
-                               onchange="previewUrl()">
-                    </div>
                     <small style="color: #999;">Formatos: JPG, PNG, GIF, WEBP (máx 5MB)</small>
+                    {% endif %}
                 </div>
 
                 <button type="submit" class="btn-submit">
@@ -229,34 +267,37 @@
         © 2025 Parrilla 51 - Todos los derechos reservados
     </footer>
 
-    <script>
-        function previewImage(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('preview-img');
-                    const container = document.getElementById('preview-container');
-                    preview.src = e.target.result;
-                    container.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-                // Limpiar URL si se selecciona archivo
-                document.getElementById('imagen_url').value = '';
-            }
-        }
-        
-        function previewUrl() {
-            const url = document.getElementById('imagen_url').value;
-            if (url) {
+  <script>
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 const preview = document.getElementById('preview-img');
                 const container = document.getElementById('preview-container');
-                preview.src = url;
-                container.style.display = 'block';
-                // Limpiar archivo si se ingresa URL
-                document.getElementById('imagen_file').value = '';
+                preview.src = e.target.result;
+                if(container) container.style.display = 'block';
             }
+            reader.readAsDataURL(file);
         }
-    </script>
+    }
+    
+    function calcularNuevoStock() {
+        const stockActual = parseInt(document.getElementById('cantidad_actual').value) || 0;
+        const cantidadNueva = parseInt(document.getElementById('cantidad_agregar').value) || 0;
+        
+        if (cantidadNueva > 0) {
+            const stockTotal = stockActual + cantidadNueva;
+            
+            document.getElementById('stock_anterior').textContent = stockActual;
+            document.getElementById('stock_nuevo').textContent = cantidadNueva;
+            document.getElementById('stock_total').textContent = stockTotal;
+            document.getElementById('preview_stock').style.display = 'block';
+        } else {
+            document.getElementById('preview_stock').style.display = 'none';
+        }
+    }
+</script>
+   
 </body>
 </html>

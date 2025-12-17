@@ -36,7 +36,7 @@ def verificar_admin():
 reportes_bp = Blueprint("reportes", __name__)
 
 # =====================
-# REPORTES DE VENTAS
+# REPORTES DE VENTAS (CON MESA)
 # =====================
 @reportes_bp.route("/ventas", methods=["GET", "POST"])
 def reportes_ventas():
@@ -48,17 +48,25 @@ def reportes_ventas():
     conexion = obtener_conexion()
     cursor = conexion.cursor(dictionary=True)
 
-    # Valores por defecto
-    busqueda = request.form.get("busqueda", "").strip() if request.method == "POST" else ""
-    filtro_mes = request.form.get("mes", "").strip() if request.method == "POST" else ""
-    filtro_estado = request.form.get("estado", "").strip() if request.method == "POST" else ""
+    # ✅ Valores por defecto - Soportar tanto POST como GET
+    if request.method == "POST":
+        busqueda = request.form.get("busqueda", "").strip()
+        filtro_mes = request.form.get("mes", "").strip()
+        filtro_estado = request.form.get("estado", "").strip()
+    else:  # GET
+        busqueda = request.args.get("busqueda", "").strip()
+        filtro_mes = request.args.get("mes", "").strip()
+        filtro_estado = request.args.get("estado", "").strip()
 
-    # Construir la consulta base
+    # Construir la consulta base CON MESA
     query = """
         SELECT p.id_pedido, u.nombre, u.apellido, p.fecha, p.hora, p.total, 
-               p.estado, p.metodo_pago, p.tipo_entrega
+               p.estado, p.metodo_pago, p.tipo_entrega,
+               COALESCE(m.numero_mesa, 'N/A') as numero_mesa
         FROM pedidos p
         INNER JOIN usuarios u ON p.cod_usuario = u.id_usuario
+        LEFT JOIN pagos_restaurante pr ON p.id_pedido = pr.id_pago_restaurante
+        LEFT JOIN mesas m ON pr.id_mesa = m.id_mesa
         WHERE 1=1
     """
     params = []
@@ -100,7 +108,7 @@ def reportes_ventas():
     )
 
 # =====================
-# REPORTES DE INVENTARIO
+# REPORTES DE INVENTARIO (CON LOTE)
 # =====================
 @reportes_bp.route("/inventario", methods=["GET", "POST"])
 def reportes_inventario():
@@ -112,15 +120,28 @@ def reportes_inventario():
     conexion = obtener_conexion()
     cursor = conexion.cursor(dictionary=True)
 
-    # Valores por defecto
-    busqueda = request.form.get("busqueda", "").strip() if request.method == "POST" else ""
-    filtro_categoria = request.form.get("categoria", "").strip() if request.method == "POST" else ""
-    filtro_stock = request.form.get("stock", "").strip() if request.method == "POST" else ""
+    # ✅ Valores por defecto - Soportar tanto POST como GET
+    if request.method == "POST":
+        busqueda = request.form.get("busqueda", "").strip()
+        filtro_categoria = request.form.get("categoria", "").strip()
+        filtro_stock = request.form.get("stock", "").strip()
+    else:  # GET
+        busqueda = request.args.get("busqueda", "").strip()
+        filtro_categoria = request.args.get("categoria", "").strip()
+        filtro_stock = request.args.get("stock", "").strip()
 
-    # Construir la consulta base
+    # Construir la consulta base CON LOTE
     query = """
         SELECT p.id_producto, p.nombre, p.cantidad, p.precio, p.descripcion,
-               c.nombre_categoria, c.id_categoria, p.fecha_vencimiento, p.fecha_lote
+               c.nombre_categoria, c.id_categoria,
+               COALESCE(
+                   (SELECT numero_lote 
+                    FROM entradas_inventario 
+                    WHERE cod_producto = p.id_producto 
+                    ORDER BY fecha_entrada DESC 
+                    LIMIT 1), 
+                   'Sin lote'
+               ) as lote_actual
         FROM productos p
         LEFT JOIN categorias c ON p.cod_categoria = c.id_categoria
         WHERE 1=1
@@ -176,7 +197,7 @@ def reportes_inventario():
     )
 
 # =====================
-# EXPORTAR VENTAS A EXCEL
+# EXPORTAR VENTAS A EXCEL (CON MESA)
 # =====================
 @reportes_bp.route("/ventas/exportar_excel")
 def exportar_ventas_excel():
@@ -191,12 +212,15 @@ def exportar_ventas_excel():
                CONCAT(u.nombre, ' ', u.apellido) AS 'Cliente',
                p.fecha AS 'Fecha', 
                p.hora AS 'Hora',
+               COALESCE(m.numero_mesa, 'Domicilio') AS 'Mesa',
                p.total AS 'Total', 
                p.estado AS 'Estado',
                p.metodo_pago AS 'Método de Pago',
                p.tipo_entrega AS 'Tipo de Entrega'
         FROM pedidos p
         INNER JOIN usuarios u ON p.cod_usuario = u.id_usuario
+        LEFT JOIN pagos_restaurante pr ON p.id_pedido = pr.id_pago_restaurante
+        LEFT JOIN mesas m ON pr.id_mesa = m.id_mesa
         ORDER BY p.fecha DESC
     """
     df = pd.read_sql(query, conexion)
@@ -248,9 +272,9 @@ def exportar_ventas_excel():
                 cell.border = border
                 cell.alignment = Alignment(horizontal="center", vertical="center")
         
-        # Formato de moneda para columna Total
+        # Formato de moneda para columna Total (ahora es la columna 6)
         for row in range(2, len(df) + 2):
-            cell = worksheet.cell(row=row, column=5)  # Columna Total
+            cell = worksheet.cell(row=row, column=6)  # Columna Total
             cell.number_format = '$#,##0'
     
     output.seek(0)
@@ -263,7 +287,7 @@ def exportar_ventas_excel():
     )
 
 # =====================
-# EXPORTAR INVENTARIO A EXCEL
+# EXPORTAR INVENTARIO A EXCEL (CON LOTE)
 # =====================
 @reportes_bp.route("/inventario/exportar_excel")
 def exportar_inventario_excel():
@@ -277,6 +301,14 @@ def exportar_inventario_excel():
         SELECT p.id_producto AS 'ID',
                p.nombre AS 'Producto',
                p.cantidad AS 'Cantidad',
+               COALESCE(
+                   (SELECT numero_lote 
+                    FROM entradas_inventario 
+                    WHERE cod_producto = p.id_producto 
+                    ORDER BY fecha_entrada DESC 
+                    LIMIT 1), 
+                   'Sin lote'
+               ) AS 'Lote',
                p.precio AS 'Precio',
                c.nombre_categoria AS 'Categoría',
                p.descripcion AS 'Descripción',
@@ -333,7 +365,7 @@ def exportar_inventario_excel():
         
         # Aplicar colores según estado de stock
         for row in range(2, len(df) + 2):
-            estado_cell = worksheet.cell(row=row, column=7)  # Columna Estado Stock
+            estado_cell = worksheet.cell(row=row, column=8)  # Columna Estado Stock
             
             if estado_cell.value == 'SIN STOCK':
                 fill = PatternFill(start_color="DC3545", end_color="DC3545", fill_type="solid")
@@ -353,9 +385,9 @@ def exportar_inventario_excel():
                 cell.border = border
                 cell.alignment = Alignment(horizontal="center", vertical="center")
         
-        # Formato de moneda para columna Precio
+        # Formato de moneda para columna Precio (ahora es la columna 5)
         for row in range(2, len(df) + 2):
-            cell = worksheet.cell(row=row, column=4)  # Columna Precio
+            cell = worksheet.cell(row=row, column=5)  # Columna Precio
             cell.number_format = '$#,##0'
     
     output.seek(0)
@@ -409,7 +441,7 @@ class PDF_Parrilla(FPDF):
         self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
 
 # =====================
-# EXPORTAR VENTAS A PDF
+# EXPORTAR VENTAS A PDF (CON MESA)
 # =====================
 @reportes_bp.route('/ventas/exportar_pdf')
 def exportar_ventas_pdf():
@@ -422,9 +454,12 @@ def exportar_ventas_pdf():
     cursor = conexion.cursor(dictionary=True)
     cursor.execute("""
         SELECT p.id_pedido, u.nombre, u.apellido, p.fecha, p.hora, p.total, 
-               p.estado, p.metodo_pago
+               p.estado, p.metodo_pago,
+               COALESCE(m.numero_mesa, 'N/A') as numero_mesa
         FROM pedidos p
         INNER JOIN usuarios u ON p.cod_usuario = u.id_usuario
+        LEFT JOIN pagos_restaurante pr ON p.id_pedido = pr.id_pago_restaurante
+        LEFT JOIN mesas m ON pr.id_mesa = m.id_mesa
         ORDER BY p.fecha DESC
     """)
     pedidos = cursor.fetchall()
@@ -441,10 +476,11 @@ def exportar_ventas_pdf():
     pdf.set_font('Arial', 'B', 9)
     pdf.set_fill_color(255, 68, 68)  # Rojo
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(20, 8, 'ID', 1, 0, 'C', True)
-    pdf.cell(50, 8, 'Cliente', 1, 0, 'C', True)
-    pdf.cell(30, 8, 'Fecha', 1, 0, 'C', True)
-    pdf.cell(25, 8, 'Hora', 1, 0, 'C', True)
+    pdf.cell(15, 8, 'ID', 1, 0, 'C', True)
+    pdf.cell(45, 8, 'Cliente', 1, 0, 'C', True)
+    pdf.cell(25, 8, 'Fecha', 1, 0, 'C', True)
+    pdf.cell(20, 8, 'Hora', 1, 0, 'C', True)
+    pdf.cell(20, 8, 'Mesa', 1, 0, 'C', True)
     pdf.cell(30, 8, 'Total', 1, 0, 'C', True)
     pdf.cell(35, 8, 'Estado', 1, 1, 'C', True)
     
@@ -459,10 +495,13 @@ def exportar_ventas_pdf():
         else:
             pdf.set_fill_color(255, 255, 255)
         
-        pdf.cell(20, 7, f"#{pedido['id_pedido']}", 1, 0, 'C', True)
-        pdf.cell(50, 7, f"{pedido['nombre']} {pedido['apellido']}"[:25], 1, 0, 'L', True)
-        pdf.cell(30, 7, str(pedido['fecha']), 1, 0, 'C', True)
-        pdf.cell(25, 7, str(pedido['hora'])[:5], 1, 0, 'C', True)
+        mesa_texto = str(pedido['numero_mesa']) if pedido['numero_mesa'] != 'N/A' else 'Dom.'
+        
+        pdf.cell(15, 7, f"#{pedido['id_pedido']}", 1, 0, 'C', True)
+        pdf.cell(45, 7, f"{pedido['nombre']} {pedido['apellido']}"[:22], 1, 0, 'L', True)
+        pdf.cell(25, 7, str(pedido['fecha']), 1, 0, 'C', True)
+        pdf.cell(20, 7, str(pedido['hora'])[:5], 1, 0, 'C', True)
+        pdf.cell(20, 7, mesa_texto, 1, 0, 'C', True)
         pdf.cell(30, 7, f"${pedido['total']:,.0f}", 1, 0, 'R', True)
         pdf.cell(35, 7, pedido['estado'][:15], 1, 1, 'C', True)
         
@@ -490,7 +529,7 @@ def exportar_ventas_pdf():
     )
 
 # =====================
-# EXPORTAR INVENTARIO A PDF
+# EXPORTAR INVENTARIO A PDF (CON LOTE)
 # =====================
 @reportes_bp.route('/inventario/exportar_pdf')
 def exportar_inventario_pdf():
@@ -502,7 +541,15 @@ def exportar_inventario_pdf():
     conexion = obtener_conexion()
     cursor = conexion.cursor(dictionary=True)
     cursor.execute("""
-        SELECT p.id_producto, p.nombre, p.cantidad, p.precio, c.nombre_categoria
+        SELECT p.id_producto, p.nombre, p.cantidad, p.precio, c.nombre_categoria,
+               COALESCE(
+                   (SELECT numero_lote 
+                    FROM entradas_inventario 
+                    WHERE cod_producto = p.id_producto 
+                    ORDER BY fecha_entrada DESC 
+                    LIMIT 1), 
+                   'Sin lote'
+               ) as lote_actual
         FROM productos p
         LEFT JOIN categorias c ON p.cod_categoria = c.id_categoria
         ORDER BY p.cantidad ASC
@@ -518,18 +565,19 @@ def exportar_inventario_pdf():
     valor_total = 0
     
     # Encabezados de tabla
-    pdf.set_font('Arial', 'B', 9)
+    pdf.set_font('Arial', 'B', 8)
     pdf.set_fill_color(255, 215, 0)  # Dorado
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(15, 8, 'ID', 1, 0, 'C', True)
-    pdf.cell(60, 8, 'Producto', 1, 0, 'C', True)
-    pdf.cell(40, 8, 'Categoria', 1, 0, 'C', True)
-    pdf.cell(25, 8, 'Stock', 1, 0, 'C', True)
-    pdf.cell(25, 8, 'Precio', 1, 0, 'C', True)
-    pdf.cell(25, 8, 'Valor', 1, 1, 'C', True)
+    pdf.cell(12, 8, 'ID', 1, 0, 'C', True)
+    pdf.cell(50, 8, 'Producto', 1, 0, 'C', True)
+    pdf.cell(35, 8, 'Categoria', 1, 0, 'C', True)
+    pdf.cell(18, 8, 'Stock', 1, 0, 'C', True)
+    pdf.cell(30, 8, 'Lote', 1, 0, 'C', True)
+    pdf.cell(22, 8, 'Precio', 1, 0, 'C', True)
+    pdf.cell(23, 8, 'Valor', 1, 1, 'C', True)
     
     # Datos
-    pdf.set_font('Arial', '', 8)
+    pdf.set_font('Arial', '', 7)
     
     for i, producto in enumerate(productos):
         # Alternar colores de fila
@@ -547,23 +595,25 @@ def exportar_inventario_pdf():
             pdf.set_text_color(0, 0, 0)  # Negro
         
         valor_producto = (producto['cantidad'] * producto['precio']) if producto['cantidad'] and producto['precio'] else 0
+        lote_texto = str(producto['lote_actual'])[:15]
         
-        pdf.cell(15, 7, str(producto['id_producto']), 1, 0, 'C', True)
-        pdf.cell(60, 7, producto['nombre'][:30], 1, 0, 'L', True)
-        pdf.cell(40, 7, (producto['nombre_categoria'] or 'N/A')[:20], 1, 0, 'C', True)
-        pdf.cell(25, 7, str(producto['cantidad']), 1, 0, 'C', True)
-        pdf.cell(25, 7, f"${producto['precio']:,.0f}", 1, 0, 'R', True)
-        pdf.cell(25, 7, f"${valor_producto:,.0f}", 1, 1, 'R', True)
+        pdf.cell(12, 7, str(producto['id_producto']), 1, 0, 'C', True)
+        pdf.cell(50, 7, producto['nombre'][:25], 1, 0, 'L', True)
+        pdf.cell(35, 7, (producto['nombre_categoria'] or 'N/A')[:18], 1, 0, 'C', True)
+        pdf.cell(18, 7, str(producto['cantidad']), 1, 0, 'C', True)
+        pdf.cell(30, 7, lote_texto, 1, 0, 'C', True)
+        pdf.cell(22, 7, f"${producto['precio']:,.0f}", 1, 0, 'R', True)
+        pdf.cell(23, 7, f"${valor_producto:,.0f}", 1, 1, 'R', True)
         
         valor_total += valor_producto
     
     # Total
     pdf.ln(5)
-    pdf.set_font('Arial', 'B', 12)
+    pdf.set_font('Arial', 'B', 11)
     pdf.set_fill_color(255, 215, 0)  # Dorado
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(165, 10, 'VALOR TOTAL DEL INVENTARIO:', 1, 0, 'R', True)
-    pdf.cell(25, 10, f'${valor_total:,.0f}', 1, 1, 'R', True)
+    pdf.cell(167, 10, 'VALOR TOTAL DEL INVENTARIO:', 1, 0, 'R', True)
+    pdf.cell(23, 10, f'${valor_total:,.0f}', 1, 1, 'R', True)
 
     # Generar PDF en memoria
     salida = BytesIO()

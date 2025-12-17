@@ -6,98 +6,303 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cliente_productos.css') }}">
   <style>
+    /* Banner de bienvenida */
+    .banner-menu {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(201, 168, 71, 0.1));
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 3px solid var(--color-gold);
+    }
+
+    .banner-menu h1 {
+      color: var(--color-gold);
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .banner-menu p {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Sección de filtros mejorada */
+    .seccion-filtros {
+      background: var(--bg-card);
+      padding: 25px;
+      margin: 20px auto;
+      max-width: 1400px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
     .filtros {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 10px;
-      margin: 20px 0;
-      padding: 20px;
+      gap: 12px;
     }
+
     .filtros button {
-      background: var(--bg-card);
+      background: var(--bg-secondary);
       color: var(--text-primary);
       border: 2px solid var(--color-gold);
-      border-radius: 8px;
-      padding: 10px 20px;
-      font-weight: bold;
+      border-radius: 25px;
+      padding: 12px 24px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+      position: relative;
+      overflow: hidden;
     }
+
+    .filtros button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: var(--color-gold);
+      transform: translate(-50%, -50%);
+      transition: width 0.3s, height 0.3s;
+      z-index: 0;
+    }
+
+    .filtros button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
     .filtros button:hover {
+      color: #000;
+      border-color: var(--color-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    }
+
+    .filtros button span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .filtros button.activo {
       background: var(--color-gold);
       color: #000;
-      transform: scale(1.05);
+      border-color: var(--color-accent);
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.5);
     }
+
+    /* Título de sección */
+    .titulo-seccion {
+      text-align: center;
+      margin: 40px 0 30px;
+      padding: 0 20px;
+    }
+
+    .titulo-seccion h2 {
+      color: var(--color-gold);
+      font-size: 2rem;
+      margin-bottom: 10px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .titulo-seccion h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+    }
+
+    .titulo-seccion p {
+      color: var(--text-primary);
+      font-size: 1rem;
+      margin-top: 20px;
+    }
+
+    /* Grid de productos */
     .productos {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 25px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
       padding: 20px;
       max-width: 1400px;
       margin: 0 auto;
     }
+
     .producto-card {
       background: var(--bg-card);
-      border: 2px solid var(--color-gold);
-      border-radius: 10px;
+      border: 2px solid transparent;
+      border-radius: 15px;
       padding: 20px;
       text-align: center;
-      transition: all 0.3s;
-      box-shadow: var(--shadow);
+      transition: all 0.4s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
     }
+
+    .producto-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--color-gold), var(--color-accent));
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+
+    .producto-card:hover::before {
+      transform: scaleX(1);
+    }
+
     .producto-card:hover {
-      transform: translateY(-5px);
-      border-color: var(--color-accent);
-      box-shadow: 0 5px 15px rgba(255, 68, 68, 0.3);
+      transform: translateY(-8px);
+      border-color: var(--color-gold);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
     }
+
+    /* Etiqueta de destacado */
+    .producto-destacado {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--color-accent);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
+    }
+
     .producto-card img {
       width: 100%;
-      height: 180px;
+      height: 200px;
       object-fit: cover;
-      border-radius: 8px;
+      border-radius: 12px;
       margin-bottom: 15px;
+      transition: transform 0.3s ease;
     }
+
+    .producto-card:hover img {
+      transform: scale(1.05);
+    }
+
     .producto-card h3 {
       color: var(--color-gold);
+      margin: 15px 0;
+      font-size: 1.3rem;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .producto-info {
+      margin: 15px 0;
+    }
+
+    .producto-precio {
+      color: var(--color-gold);
+      font-size: 1.5rem;
+      font-weight: bold;
       margin: 10px 0;
     }
-    .acciones {
-      margin-top: 15px;
+
+    .producto-categoria {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin: 8px 0;
+      padding: 5px 10px;
+      background: rgba(212, 175, 55, 0.1);
+      border-radius: 15px;
+      display: inline-block;
     }
+
+    .producto-descripcion {
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 10px 0;
+      min-height: 60px;
+    }
+
+    /* Acciones del producto */
+    .acciones {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
     .acciones input[type="number"] {
-      width: 60px;
-      padding: 5px;
+      width: 70px;
+      padding: 10px;
       text-align: center;
-      margin-right: 10px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
+      border: 2px solid var(--color-gold);
+      border-radius: 8px;
       background: var(--bg-secondary);
       color: var(--text-primary);
+      font-weight: bold;
+      font-size: 1rem;
     }
-    #imagen-fondo {
-      text-align: center;
-      margin: 30px 0;
-      opacity: 0.2;
+
+    .acciones input[type="number"]:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
     }
-    #imagen-fondo img {
-      max-width: 400px;
-      height: auto;
+
+    .acciones button {
+      flex: 1;
+      background: linear-gradient(135deg, var(--color-gold), #c9a847);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
     }
+
+    .acciones button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.5);
+    }
+
+    /* Mensaje de producto agregado */
     #mensaje-agregado {
       position: fixed;
       bottom: 30px;
       right: 30px;
-      background: var(--color-gold);
+      background: linear-gradient(135deg, var(--color-gold), #c9a847);
       color: #000;
-      padding: 15px 25px;
-      border-radius: 8px;
+      padding: 18px 30px;
+      border-radius: 12px;
       font-weight: bold;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      font-size: 1.1rem;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
       display: none;
       animation: slideIn 0.5s ease;
       z-index: 1000;
     }
+
     @keyframes slideIn {
       from {
         transform: translateX(400px);
@@ -108,17 +313,87 @@
         opacity: 1;
       }
     }
+
+    /* Texto informativo */
     .texto-info {
       text-align: center;
-      padding: 20px;
+      padding: 25px;
       background: var(--bg-card);
-      margin: 20px auto;
-      max-width: 800px;
-      border-radius: 10px;
+      margin: 30px auto;
+      max-width: 900px;
+      border-radius: 12px;
+      border: 2px solid rgba(212, 175, 55, 0.3);
     }
+
     .texto-info h4 {
       color: var(--color-gold);
+      margin-bottom: 12px;
+      font-size: 1.3rem;
+    }
+
+    .texto-info p {
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+
+    /* Botón volver */
+    .volver {
+      display: inline-block;
+      padding: 12px 30px;
+      background: rgba(212, 175, 55, 0.1);
+      color: var(--color-gold);
+      text-decoration: none;
+      border-radius: 8px;
+      border: 2px solid var(--color-gold);
+      transition: all 0.3s ease;
+      margin: 40px 0;
+      font-weight: 600;
+    }
+
+    .volver:hover {
+      background: var(--color-gold);
+      color: #000;
+      transform: translateX(-5px);
+    }
+
+    /* Sin productos */
+    .sin-productos {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-primary);
+    }
+
+    .sin-productos img {
+      max-width: 300px;
+      opacity: 0.3;
+      margin-bottom: 20px;
+    }
+
+    .sin-productos h3 {
+      color: var(--color-gold);
+      font-size: 1.5rem;
       margin-bottom: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .banner-menu h1 {
+        font-size: 1.8rem;
+      }
+
+      .productos {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+      }
+
+      .filtros button {
+        padding: 10px 18px;
+        font-size: 0.9rem;
+      }
+
+      .titulo-seccion h2 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
@@ -131,67 +406,187 @@
       {% for category, message in messages %}
         <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
           {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          <button type="button class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       {% endfor %}
     </div>
   {% endif %}
-{% endwith %}
-    <div class="texto-info">
-      <h4>Todos nuestros cortes serán servidos con dos (2) acompañamientos</h4>
-      <p>Bebida no incluida</p>
-    </div>
+  {% endwith %}
 
+  <!-- Banner de bienvenida -->
+  <div class="banner-menu">
+    <h1>🍖 Nuestro Menú</h1>
+    <p>Descubre los mejores cortes y platos de la parrilla</p>
+  </div>
+
+  <!-- Información importante -->
+  <div class="texto-info">
+    <h4>✨ Todos nuestros cortes serán servidos con dos (2) acompañamientos</h4>
+    <p>Bebida no incluida</p>
+  </div>
+
+  <!-- Sección de filtros -->
+  <div class="seccion-filtros">
     <div class="filtros">
-        <button onclick="filtrar('cerdo')">Cerdo</button>
-        <button onclick="filtrar('res')">Res</button>
-        <button onclick="filtrar('pollo')">Pollo</button>
-        <button onclick="filtrar('plato del dia')">Plato del día</button>
-        <button onclick="filtrar('acompañamientos')">Acompañamientos</button>
-        <button onclick="filtrar('entradas')">Entradas</button>
-        <button onclick="filtrar('platos combinados')">Platos combinados</button>
-        <button onclick="filtrar('cortes gruesos')">Cortes gruesos</button>
-        <button onclick="filtrar('bebidas')">Bebidas</button>
-        <button onclick="filtrar('adicionales')">Adicionales</button>
+      <button onclick="mostrarMejores()" id="btn-mejores" class="activo">
+        <span>⭐ Nuestros Mejores Platos</span>
+      </button>
+      <button onclick="filtrar('res')"><span>🥩 Res</span></button>
+      <button onclick="filtrar('cerdo')"><span>🐷 Cerdo</span></button>
+      <button onclick="filtrar('pollo')"><span>🍗 Pollo</span></button>
+      <button onclick="filtrar('plato del dia')"><span>🍲 Plato del día</span></button>
+      <button onclick="filtrar('acompañamientos')"><span>🥗 Acompañamientos</span></button>
+      <button onclick="filtrar('entradas')"><span>🍴 Entradas</span></button>
+      <button onclick="filtrar('platos combinados')"><span>🍽️ Platos combinados</span></button>
+      <button onclick="filtrar('cortes gruesos')"><span>🥓 Cortes gruesos</span></button>
+      <button onclick="filtrar('bebidas')"><span>🥤 Bebidas</span></button>
+      <button onclick="filtrar('adicionales')"><span>➕ Adicionales</span></button>
     </div>
+  </div>
 
-    <div id="imagen-fondo">
-        <img src="{{ url_for('static', filename='img/Vaca.png') }}" alt="vaca">
+  <!-- Título dinámico -->
+  <div class="titulo-seccion" id="titulo-seccion">
+    <h2>⭐ Nuestros Mejores Platos</h2>
+    <p>Los favoritos de nuestros clientes</p>
+  </div>
+
+  <!-- Grid de productos -->
+  <div class="productos" id="productos-container">
+    {% for p in productos %}
+    <div class="card producto-card" 
+        data-categoria="{{ p.get('nombre_categoria', 'sin categoría') | trim | lower }}"
+        data-destacado="{% if p.nombre in ['Churrasco grande (390g)', 'Parrillada (res, cerdo, pechuga y chorizo)', 'Lomo de cerdo grande (320g)', 'Pechuga grande (320g)', 'Baby beef (250g)', 'Plato mixto'] %}true{% else %}false{% endif %}">
+      
+      {% if p.nombre in ['Churrasco grande (390g)', 'Parrillada (res, cerdo, pechuga y chorizo)', 'Lomo de cerdo grande (320g)', 'Pechuga grande (320g)', 'Baby beef (250g)', 'Plato mixto'] %}
+        <span class="producto-destacado">⭐ Destacado</span>
+      {% endif %}
+
+      {% if p.imagen %}
+        <img src="{{ url_for('static', filename='img/' ~ p.imagen) }}" alt="{{ p.nombre }}">
+      {% else %}
+        <img src="{{ url_for('static', filename='img/no-image.png') }}" alt="{{ p.nombre }}">
+      {% endif %}
+
+      <h3>{{ p.nombre }}</h3>
+      
+      <div class="producto-info">
+        <div class="producto-precio">${{ "{:,.0f}".format(p.precio).replace(",", ".") }}</div>
+        <span class="producto-categoria">{{ p.get('nombre_categoria', 'Sin categoría') }}</span>
+        <p class="producto-descripcion">{{ p.get('descripcion', 'Delicioso plato de la casa') }}</p>
+      </div>
+
+      <div class="acciones">
+        <form method="POST" action="{{ url_for('cliente.agregar_carrito', id_producto=p.id_producto) }}" onsubmit="mostrarMensaje(event)">
+          <input type="number" name="cantidad" value="1" min="1" max="{{ p.cantidad }}">
+          <button type="submit">🛒 Agregar</button>
+        </form>
+      </div>
     </div>
+    {% endfor %}
+  </div>
 
-    <div class="productos">
-        {% for p in productos %}
-        <div class="card producto-card" 
-            data-categoria="{{ p.get('nombre_categoria', 'sin categoría') | trim | lower }}" 
-            style="display:none;">   
+  <div id="mensaje-agregado">✅ Producto agregado al carrito</div>
 
-            {% if p.imagen %}
-                <img src="{{ url_for('static', filename='img/' ~ p.imagen) }}" alt="{{ p.nombre }}">
-            {% else %}
-                <img src="{{ url_for('static', filename='no-image.png') }}" alt="{{ p.nombre }}">
-            {% endif %}
+  <div class="text-center" style="margin: 40px 0;">
+    <a href="{{ url_for('dashboard.cliente_dashboard') }}" class="volver">⬅️ Volver al inicio</a>
+  </div>
 
-            <h3>{{ p.nombre }}</h3>
-            <p><strong>Precio:</strong> COP ${{ "{:,.0f}".format(p.precio).replace(",", ".") }}</p>
-            <p><strong>Categoría:</strong> {{ p.get('nombre_categoria', 'Sin categoría') }}</p>
-            <p><strong>Descripción:</strong> {{ p.get('descripcion', 'Sin descripción') }}</p>
+<script>
+// Mostrar los mejores platos por defecto
+window.addEventListener('DOMContentLoaded', function() {
+  mostrarMejores();
+});
 
-            <div class="acciones">
-                <form method="POST" action="{{ url_for('cliente.agregar_carrito', id_producto=p.id_producto) }}" onsubmit="mostrarMensaje(event)">
-                    <input type="number" name="cantidad" value="1" min="1">
-                    <button type="submit" class="btn">🛒 Agregar</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+function mostrarMejores() {
+  const cards = document.querySelectorAll('.producto-card');
+  const titulo = document.getElementById('titulo-seccion');
+  const btnMejores = document.getElementById('btn-mejores');
+  
+  // Actualizar botones activos
+  document.querySelectorAll('.filtros button').forEach(btn => btn.classList.remove('activo'));
+  btnMejores.classList.add('activo');
+  
+  // Actualizar título
+  titulo.innerHTML = `
+    <h2>⭐ Nuestros Mejores Platos</h2>
+    <p>Los favoritos de nuestros clientes</p>
+  `;
+  
+  let hayDestacados = false;
+  cards.forEach(card => {
+    if (card.dataset.destacado === 'true') {
+      card.style.display = 'block';
+      hayDestacados = true;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  
+  if (!hayDestacados) {
+    // Si no hay destacados, mostrar todos
+    cards.forEach(card => card.style.display = 'block');
+  }
+}
 
-    <div id="mensaje-agregado">✅ Producto agregado al carrito</div>
+function filtrar(categoria) {
+  const cards = document.querySelectorAll('.producto-card');
+  const titulo = document.getElementById('titulo-seccion');
+  
+  // Actualizar botones activos
+  document.querySelectorAll('.filtros button').forEach(btn => btn.classList.remove('activo'));
+  event.target.closest('button').classList.add('activo');
+  
+  // Mapeo de categorías a emojis y títulos
+  const categoriaInfo = {
+    'res': { emoji: '🥩', nombre: 'Res', desc: 'Los mejores cortes de res' },
+    'cerdo': { emoji: '🐷', nombre: 'Cerdo', desc: 'Deliciosos cortes de cerdo' },
+    'pollo': { emoji: '🍗', nombre: 'Pollo', desc: 'Jugosas pechugas y más' },
+    'plato del dia': { emoji: '🍲', nombre: 'Plato del día', desc: 'Especialidades diarias' },
+    'acompañamientos': { emoji: '🥗', nombre: 'Acompañamientos', desc: 'Perfectos complementos' },
+    'entradas': { emoji: '🍴', nombre: 'Entradas', desc: 'Para comenzar bien' },
+    'platos combinados': { emoji: '🍽️', nombre: 'Platos combinados', desc: 'Lo mejor de todo' },
+    'cortes gruesos': { emoji: '🥓', nombre: 'Cortes gruesos', desc: 'Para los más exigentes' },
+    'bebidas': { emoji: '🥤', nombre: 'Bebidas', desc: 'Refréscate' },
+    'adicionales': { emoji: '➕', nombre: 'Adicionales', desc: 'Complementa tu pedido' }
+  };
+  
+  const info = categoriaInfo[categoria] || { emoji: '🍽️', nombre: categoria, desc: '' };
+  
+  // Actualizar título
+  titulo.innerHTML = `
+    <h2>${info.emoji} ${info.nombre}</h2>
+    <p>${info.desc}</p>
+  `;
+  
+  let hayProductos = false;
+  cards.forEach(card => {
+    if (card.dataset.categoria === categoria.toLowerCase()) {
+      card.style.display = 'block';
+      hayProductos = true;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  
+  if (!hayProductos) {
+    document.getElementById('productos-container').innerHTML = `
+      <div class="sin-productos">
+        <img src="${window.location.origin}/static/img/Vaca.png" alt="Sin productos">
+        <h3>No hay productos en esta categoría</h3>
+        <p>Por favor selecciona otra categoría</p>
+      </div>
+    `;
+  }
+}
 
-    <div class="text-center" style="margin: 40px 0;">
-      <a href="{{ url_for('dashboard.cliente_dashboard') }}" class="volver">⬅ Volver</a>
-    </div>
-
-<script src="{{ url_for('static', filename='js/cliente_productos.js') }}"></script>
+function mostrarMensaje(event) {
+  const mensaje = document.getElementById('mensaje-agregado');
+  mensaje.style.display = 'block';
+  
+  setTimeout(() => {
+    mensaje.style.display = 'none';
+  }, 3000);
+}
+</script>
 </body>
 </html>

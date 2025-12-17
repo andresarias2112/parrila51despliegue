@@ -139,6 +139,7 @@
     .search-container {
       margin-bottom: 20px;
     }
+
     .card {
       background-color: #2f2f2f;
       color: #f0f0f0;
@@ -173,9 +174,8 @@
       min-height: 100vh;
     }
 
-    /* ==== CONTENIDO PRINCIPAL ==== */
     main {
-      flex: 1; /* ocupa todo el espacio disponible */
+      flex: 1;
       display: flex;
       flex-direction: column;
     }
@@ -183,11 +183,10 @@
     .container {
       flex: 1;
       width: 100%;
-      padding-bottom: 40px; /* espacio para que el contenido no toque el footer */
+      padding-bottom: 40px;
       margin-bottom: 0 !important;
     }
 
-    /* ==== FOOTER ==== */
     footer {
       background: #2f2f2f;
       color: #fff;
@@ -197,40 +196,41 @@
       font-size: 15px;
       width: 100%;
       box-sizing: border-box;
-      margin-top: auto; /* se queda al fondo del contenido */
+      margin-top: auto;
       flex-shrink: 0;
     }
+
     main.container {
-      margin-top: -35px !important; /* lo sube un poquito más */
-      padding-top: 0 !important;   /* elimina espacio interno adicional */
-    }
-    main h3 {
-      margin-top: 0 !important;    /* asegura que el título no empuje hacia abajo */
+      margin-top: -35px !important;
       padding-top: 0 !important;
     }
+
+    main h3 {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+
     .alert {
-    position: fixed;
-    top: 70px; /* ajusta según la altura de tu navbar */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    z-index: 1050; /* para que se vea encima de todo */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-/* Aseguramos que el mensaje tenga un buen espaciado */
-  .alert-info {
-    margin-top: 20px;  /* Añadir un margen para que no se pegue al título */
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border-color: #bee5eb;
-  }
-.titulo-amarillo {
-  color: #ffd700 !important;
-  font-weight: bold;
-}
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      z-index: 1050;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
 
+    .alert-info {
+      margin-top: 20px;
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border-color: #bee5eb;
+    }
 
-
+    .titulo-amarillo {
+      color: #ffd700 !important;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -246,7 +246,8 @@
       {% endfor %}
     </div>
   {% endif %}
-{% endwith %}
+  {% endwith %}
+
   <nav class="navbar">
     <div class="logo">
       <img src="{{ url_for('static', filename='img/logooo.png') }}" alt="Logo" />
@@ -257,7 +258,6 @@
     </ul>
   </nav>
 
-  <!-- 🔹 CONTENEDOR DE MENSAJES FLASH -->
   <div id="alertContainer" class="container mt-3">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -272,40 +272,36 @@
   </div>
 
   <main class="container mt-1 position-relative">
-  <h3 class="text-center mb-3 titulo-amarillo">Reservas Disponibles</h3>
+    <h3 class="text-center mb-3 titulo-amarillo">Reservas Disponibles</h3>
 
-
-  {% if not reservas %}
-    <div class="text-center mb-3">
-      <p class="alert alert-info">No hay reservas disponibles.</p>
-    </div>
-  {% endif %}
-
-  <!-- 🔎 BÚSQUEDA -->
-  <div class="search-container mb-3">
-    <form action="{{ url_for('empleado.buscar_reservas') }}" method="GET">
-      <div class="input-group">
-        <input type="text" class="form-control" placeholder="Buscar por nombre, documento, teléfono..."
-          name="search_query" value="{{ request.args.get('search_query', '') }}" autocomplete="off" />
-        <button class="btn btn-warning" type="submit">Buscar</button>
+    {% if not reservas %}
+      <div class="text-center mb-3">
+        <p class="alert alert-info">No hay reservas disponibles.</p>
       </div>
-    </form>
-  </div>
+    {% endif %}
 
-  <!-- 📜 BOTONES -->
-  <div class="position-relative mb-3">
-    <a href="{{ url_for('empleado.historial_reservas_em') }}" class="btn btn-warning position-absolute end-0">
-      Historial
-    </a>
-
-    <div class="text-center">
-      <button class="btn btn-danger px-5" data-bs-toggle="modal" data-bs-target="#modalAgregar">
-        + Agregar Reserva
-      </button>
+    <div class="search-container mb-3">
+      <form action="{{ url_for('empleado.buscar_reservas') }}" method="GET">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Buscar por nombre, documento, teléfono..."
+            name="search_query" value="{{ request.args.get('search_query', '') }}" autocomplete="off" />
+          <button class="btn btn-warning" type="submit">Buscar</button>
+        </div>
+      </form>
     </div>
-  </div>
+
+    <div class="position-relative mb-3">
+      <a href="{{ url_for('empleado.historial_reservas_em') }}" class="btn btn-warning position-absolute end-0">
+        Historial
+      </a>
+
+      <div class="text-center">
+        <button class="btn btn-danger px-5" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+          + Agregar Reserva
+        </button>
+      </div>
+    </div>
  
-    <!-- 🔹 LISTADO DE RESERVAS -->
     <div class="row mt-4 g-4">
       {% if reservas %}
         {% for res in reservas %}
@@ -340,7 +336,6 @@
             </div>
           </div>
 
-          <!-- 🟡 MODAL EDITAR -->
           <div class="modal fade" id="modalEditar{{ loop.index0 }}" tabindex="-1">
             <div class="modal-dialog">
               <form action="{{ url_for('empleado.editar_reserva', id_reserva=res.id_reserva) }}" method="POST" class="modal-content p-3">
@@ -375,25 +370,16 @@
                   <label class="form-label">Cantidad de personas</label>
                   <select class="form-select mb-3" name="cant_personas">
                     <option value="">Seleccione la cantidad de personas</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if res.cant_personas == i|string %}selected{% endif %}>{{ i }}</option>
+                    {% endfor %}
                   </select>
 
                   <label class="form-label">Tipo de Evento</label>
                   <select class="form-select mb-3" name="tipo_evento">
-                    <option value="almuerzo" {% if res.tipo_evento=='almuerzo' %}selected{% endif %}>Almuerzo</option>
-                    <option value="reunion" {% if res.tipo_evento=='reunion' %}selected{% endif %}>Reunión</option>
-                    <option value="celebracion" {% if res.tipo_evento=='celebracion' %}selected{% endif %}>Celebración</option>
+                    <option value="Almuerzo" {% if res.tipo_evento=='Almuerzo' %}selected{% endif %}>Almuerzo</option>
+                    <option value="Reunión" {% if res.tipo_evento=='Reunión' %}selected{% endif %}>Reunión</option>
+                    <option value="Celebración" {% if res.tipo_evento=='Celebración' %}selected{% endif %}>Celebración</option>
                     <option value="Otro" {% if res.tipo_evento=='Otro' %}selected{% endif %}>Otro</option>
                   </select>
 
@@ -413,7 +399,6 @@
             </div>
           </div>
 
-          <!-- 🔹 Modal Confirmar Eliminar -->
           <div class="modal fade" id="modalConfirmarEliminar{{ res.id_reserva }}" tabindex="-1"
             aria-labelledby="modalLabel{{ res.id_reserva }}" aria-hidden="true">
             <div class="modal-dialog">
@@ -434,7 +419,7 @@
               </div>
             </div>
           </div>
-          <!-- 🟢 MODAL CAMBIAR ESTADO -->
+
           <div class="modal fade" id="modalEstado{{ res.id_reserva }}" tabindex="-1">
             <div class="modal-dialog">
               <form onsubmit="return cambiarEstado(event, {{ res.id_reserva }})" class="modal-content p-3">
@@ -461,9 +446,7 @@
         {% endfor %}
       {% endif %}
     </div>
-   
 
-    <!-- 🟢 MODAL AGREGAR -->
     <div class="modal fade" id="modalAgregar" tabindex="-1">
       <div class="modal-dialog">
         <form action="{{ url_for('empleado.agregar_reserva') }}" method="POST" class="modal-content p-3">
@@ -498,26 +481,17 @@
             <label class="form-label">Cantidad de personas</label>
             <select class="form-select mb-3" name="cant_personas">
               <option value="">Seleccione la cantidad de personas</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
+              {% for i in range(1, 13) %}
+              <option value="{{ i }}">{{ i }}</option>
+              {% endfor %}
             </select>
 
             <label class="form-label">Tipo de evento</label>
             <select class="form-select mb-3" name="tipo_evento" required>
               <option value="">Seleccione...</option>
-              <option value="almuerzo">Almuerzo</option>
-              <option value="reunion">Reunión</option>
-              <option value="celebracion">Celebración</option>
+              <option value="Almuerzo">Almuerzo</option>
+              <option value="Reunión">Reunión</option>
+              <option value="Celebración">Celebración</option>
               <option value="Otro">Otro</option>
             </select>
 
@@ -538,15 +512,12 @@
     </div>
   </main>
 
-
   <footer>
     © 2025 Parrilla 51 - Todos los derechos reservados
   </footer>
 
-  <!-- ✅ BOOTSTRAP -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- ✅ ALERTAS -->
   <script>
     function mostrarAlerta(mensaje, tipo = "success") {
       const alertContainer = document.getElementById("alertContainer");
@@ -598,4 +569,3 @@
   </script>
 </body>
 </html>
-

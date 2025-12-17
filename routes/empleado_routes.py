@@ -174,6 +174,7 @@ def historial_pagos_restaurante():
 
     pagos = cur.fetchall()
     historial = []
+    historial_por_fecha = {}
 
     for pago in pagos:
         cur.execute("""
@@ -186,9 +187,18 @@ def historial_pagos_restaurante():
         detalles = cur.fetchall()
         pago["detalles"] = detalles
         historial.append(pago)
+        
+        # Agrupar por fecha
+        fecha = pago["fecha"].strftime("%Y-%m-%d") if hasattr(pago["fecha"], 'strftime') else str(pago["fecha"])
+        if fecha not in historial_por_fecha:
+            historial_por_fecha[fecha] = []
+        historial_por_fecha[fecha].append(pago)
 
     cur.close()
-    return render_template('historial_pagos_restaurante.html', historial=historial)
+    return render_template('historial_pagos_restaurante.html', 
+                         historial=historial,
+                         historial_por_fecha=historial_por_fecha,
+                         query=query)
 
 # ===============================
 # REGISTRAR PEDIDO
@@ -292,7 +302,7 @@ def actualizar_estado_producto():
         return jsonify({"success": False, "msg": f"❌ Error: {str(e)}"}), 500
 
 # ===============================
-# ÓRDENES CON PAGINACIÓN
+# ÓRDENES CON PAGINACIÓN (ACTUALIZADO)
 # ===============================
 @empleado_bp.route('/empleado/ordenes')
 def ordenes_empleado():
@@ -311,12 +321,12 @@ def ordenes_empleado():
         cur.execute("""
             SELECT COUNT(*) as total FROM pedidos
             WHERE (cod_usuario LIKE %s OR telefono LIKE %s OR estado LIKE %s)
-            AND estado NOT IN ('entregado', 'cancelado')
+            AND estado NOT IN ('entregado', 'cancelado', 'pagado')
         """, (f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"))
     else:
         cur.execute("""
             SELECT COUNT(*) as total FROM pedidos
-            WHERE estado NOT IN ('entregado', 'cancelado')
+            WHERE estado NOT IN ('entregado', 'cancelado', 'pagado')
         """)
     
     total = cur.fetchone()['total']
@@ -327,14 +337,14 @@ def ordenes_empleado():
         cur.execute("""
             SELECT * FROM pedidos
             WHERE (cod_usuario LIKE %s OR telefono LIKE %s OR estado LIKE %s)
-            AND estado NOT IN ('entregado', 'cancelado')
+            AND estado NOT IN ('entregado', 'cancelado', 'pagado')
             ORDER BY fecha DESC, hora DESC
             LIMIT %s OFFSET %s
         """, (f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", per_page, offset))
     else:
         cur.execute("""
             SELECT * FROM pedidos
-            WHERE estado NOT IN ('entregado', 'cancelado')
+            WHERE estado NOT IN ('entregado', 'cancelado', 'pagado')
             ORDER BY fecha DESC, hora DESC
             LIMIT %s OFFSET %s
         """, (per_page, offset))
@@ -373,7 +383,7 @@ def ordenes_empleado():
                          total_pages=total_pages)
 
 # ===============================
-# CAMBIAR ESTADO PEDIDO (AJAX)
+# CAMBIAR ESTADO PEDIDO (ACTUALIZADO CON PAGADO)
 # ===============================
 @empleado_bp.route('/actualizar_estado/<int:id_pedido>', methods=['POST'])
 def actualizar_estado(id_pedido):
@@ -384,6 +394,11 @@ def actualizar_estado(id_pedido):
     data = request.get_json()
     nuevo_estado = data.get('estado')
 
+    # Validar que el estado sea válido
+    estados_validos = ['pendiente', 'en preparación', 'entregado', 'cancelado', 'pagado']
+    if nuevo_estado not in estados_validos:
+        return jsonify({'error': 'Estado no válido'}), 400
+
     cur = mysql.connection.cursor()
     cur.execute("UPDATE pedidos SET estado=%s WHERE id_pedido=%s", (nuevo_estado, id_pedido))
     mysql.connection.commit()
@@ -393,7 +408,8 @@ def actualizar_estado(id_pedido):
         'pendiente': '⏳',
         'en preparación': '👨‍🍳',
         'entregado': '✅',
-        'cancelado': '❌'
+        'cancelado': '❌',
+        'pagado': '💰'
     }.get(nuevo_estado, '📦')
 
     return jsonify({
@@ -403,7 +419,7 @@ def actualizar_estado(id_pedido):
     })
 
 # ===============================
-# HISTORIAL ÓRDENES CON PAGINACIÓN
+# HISTORIAL ÓRDENES CON PAGINACIÓN (ACTUALIZADO)
 # ===============================
 @empleado_bp.route('/empleado/historial_ordenes')
 def historial_ordenes_empleado():
@@ -421,13 +437,13 @@ def historial_ordenes_empleado():
     if search_query:
         cur.execute("""
             SELECT COUNT(*) as total FROM pedidos
-            WHERE estado IN ('entregado', 'cancelado')
+            WHERE estado IN ('entregado', 'cancelado', 'pagado')
               AND (cod_usuario LIKE %s OR telefono LIKE %s OR estado LIKE %s)
         """, (f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"))
     else:
         cur.execute("""
             SELECT COUNT(*) as total FROM pedidos
-            WHERE estado IN ('entregado', 'cancelado')
+            WHERE estado IN ('entregado', 'cancelado', 'pagado')
         """)
     
     total = cur.fetchone()['total']
@@ -437,7 +453,7 @@ def historial_ordenes_empleado():
     if search_query:
         cur.execute("""
             SELECT * FROM pedidos
-            WHERE estado IN ('entregado', 'cancelado')
+            WHERE estado IN ('entregado', 'cancelado', 'pagado')
               AND (cod_usuario LIKE %s OR telefono LIKE %s OR estado LIKE %s)
             ORDER BY fecha DESC, hora DESC
             LIMIT %s OFFSET %s
@@ -445,7 +461,7 @@ def historial_ordenes_empleado():
     else:
         cur.execute("""
             SELECT * FROM pedidos
-            WHERE estado IN ('entregado', 'cancelado')
+            WHERE estado IN ('entregado', 'cancelado', 'pagado')
             ORDER BY fecha DESC, hora DESC
             LIMIT %s OFFSET %s
         """, (per_page, offset))
@@ -493,6 +509,20 @@ def reservas_empleado():
     if not es_empleado:
         flash(mensaje, 'danger')
         return redirect(url_for('auth.login'))
+    
+    # ACTUALIZAR RESERVAS VENCIDAS AUTOMÁTICAMENTE
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE reservas 
+            SET estado = 'Completada'
+            WHERE fecha < CURDATE() 
+            AND estado IN ('Pendiente', 'Confirmada')
+        """)
+        mysql.connection.commit()
+        cur.close()
+    except Exception as e:
+        print(f"Error actualizando reservas vencidas: {e}")
     
     cur = mysql.connection.cursor()
     cur.execute("""
@@ -806,6 +836,41 @@ def api_cambiar_contrasena_empleado():
     cur.close()
 
     return jsonify({"error": False, "mensaje": "✅ Contraseña actualizada con éxito"})
+
+# ===============================
+# ACTUALIZAR RESERVAS VENCIDAS MANUALMENTE
+# ===============================
+@empleado_bp.route('/empleado/actualizar_reservas_vencidas', methods=['POST'])
+def actualizar_reservas_vencidas():
+    es_empleado, mensaje = verificar_empleado()
+    if not es_empleado:
+        return jsonify({'error': mensaje}), 403
+    
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Actualizar reservas vencidas
+        cur.execute("""
+            UPDATE reservas 
+            SET estado = 'Completada'
+            WHERE fecha < CURDATE() 
+            AND estado IN ('Pendiente', 'Confirmada')
+        """)
+        
+        cantidad_actualizada = cur.rowcount
+        mysql.connection.commit()
+        cur.close()
+        
+        return jsonify({
+            'success': True,
+            'mensaje': f'✅ Se actualizaron {cantidad_actualizada} reservas vencidas'
+        })
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({
+            'success': False,
+            'mensaje': f'❌ Error: {str(e)}'
+        }), 500
 
 # ===============================
 # REGISTRAR BLUEPRINT

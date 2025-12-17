@@ -154,6 +154,14 @@
       color: white;
     }
 
+    .badge-mesa {
+      background-color: #6c757d;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
     .btn-export {
       background-color: #ff4444;
       color: white;
@@ -304,6 +312,7 @@
               <th>Cliente</th>
               <th>Fecha</th>
               <th>Hora</th>
+              <th>Mesa</th>
               <th>Total</th>
               <th>Método Pago</th>
               <th>Tipo Entrega</th>
@@ -317,6 +326,15 @@
               <td>{{ pedido.nombre }} {{ pedido.apellido }}</td>
               <td>{{ pedido.fecha }}</td>
               <td>{{ pedido.hora }}</td>
+              <td>
+                <span class="badge-mesa">
+                  {% if pedido.numero_mesa != 'N/A' %}
+                    🪑 Mesa {{ pedido.numero_mesa }}
+                  {% else %}
+                    🏠 Domicilio
+                  {% endif %}
+                </span>
+              </td>
               <td><strong>${{ "{:,.0f}".format(pedido.total) }}</strong></td>
               <td>{{ pedido.metodo_pago or 'N/A' }}</td>
               <td>{{ pedido.tipo_entrega or 'N/A' }}</td>
