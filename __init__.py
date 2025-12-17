@@ -12,12 +12,10 @@ mail = Mail()
 serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY', 'mi-clave-super-secreta-123456789'))
 
 def create_app():
-    print("🔵 Iniciando create_app...")
     app = Flask(__name__, template_folder="template")
     
     # Secret key desde variables de entorno
     app.secret_key = os.environ.get('SECRET_KEY', 'mi-clave-super-secreta-123456789')
-    print("✅ Secret key configurada")
 
     # ------------------ Configuración Base de Datos Railway ------------------
     app.config['MYSQL_HOST'] = os.environ.get('MYSQLHOST', 'maglev.proxy.rlwy.net')
@@ -28,18 +26,6 @@ def create_app():
     app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
     
     mysql.init_app(app)
-    print("✅ MySQL configurado")
-
-    # ------------------ RUTAS DE PRUEBA ------------------
-    @app.route('/')
-    def home():
-        return "¡App funcionando! 🎉 Railway deployment exitoso"
-
-    @app.route('/test')
-    def test():
-        return "Test OK ✅"
-    
-    print("✅ Rutas de prueba creadas")
 
     # ------------------ Configuración Correo ------------------
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -49,26 +35,20 @@ def create_app():
     app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'tyga bjte atex xajy')
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'enviodecorreosparrilla51@gmail.com')
     mail.init_app(app)
-    print("✅ Mail configurado")
     
     # ------------------ Registrar Blueprints ------------------
-    print("🔵 Importando rutas...")
     from routes.auth_routes import auth_bp
     from routes.dashboard_routes import dashboard_bp
     from routes.cliente_routes import cliente_bp
     from routes.admin_routes import admin_bp
     from routes.empleado_routes import empleado_bp
     from routes.reportes import reportes_bp
-    print("✅ Rutas importadas")
     
-    print("🔵 Registrando blueprints...")
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(cliente_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(empleado_bp)
     app.register_blueprint(reportes_bp, url_prefix='/reportes')
-    print("✅ Blueprints registrados")
     
-    print("✅ App creada completamente")
     return app
