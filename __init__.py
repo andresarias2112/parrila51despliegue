@@ -10,29 +10,22 @@ from itsdangerous import URLSafeTimedSerializer
 mysql = MySQL()
 mail = Mail()
 # Mover serializer FUERA de create_app
-serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY', 'pinchellave'))
+serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY', 'mi-clave-super-secreta-123456789'))
 
 def create_app():
     app = Flask(__name__, template_folder="template")
     
     # Secret key desde variables de entorno
-    app.secret_key = os.environ.get('SECRET_KEY', 'pinchellave')
+    app.secret_key = os.environ.get('SECRET_KEY', 'mi-clave-super-secreta-123456789')
 
-    # ------------------ Configuración Base de Datos ------------------
-    # Detectar si estamos en Railway (producción) o local (desarrollo)
-    if os.environ.get('MYSQLHOST'):  # Estamos en Railway
-        app.config['MYSQL_HOST'] = os.environ.get('MYSQLHOST')
-        app.config['MYSQL_USER'] = os.environ.get('MYSQLUSER')
-        app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQLPASSWORD')
-        app.config['MYSQL_DB'] = os.environ.get('MYSQLDATABASE')
-        app.config['MYSQL_PORT'] = int(os.environ.get('MYSQLPORT', 3306))
-    else:  # Desarrollo local
-        app.config['MYSQL_HOST'] = 'localhost'
-        app.config['MYSQL_USER'] = 'root'
-        app.config['MYSQL_PASSWORD'] = ''
-        app.config['MYSQL_DB'] = 'parrilla51'
-    
+    # ------------------ Configuración Base de Datos Railway ------------------
+    app.config['MYSQL_HOST'] = os.environ.get('MYSQLHOST', 'maglev.proxy.rlwy.net')
+    app.config['MYSQL_USER'] = os.environ.get('MYSQLUSER', 'root')
+    app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQLPASSWORD', 'VFrVhNgTDBiaFcemtYnGGYkxyiUOAKsT')
+    app.config['MYSQL_DB'] = os.environ.get('MYSQLDATABASE', 'railway')
+    app.config['MYSQL_PORT'] = int(os.environ.get('MYSQLPORT', 15970))
     app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+    
     mysql.init_app(app)
 
     # ------------------ Configuración Correo ------------------
