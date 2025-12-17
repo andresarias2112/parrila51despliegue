@@ -14,15 +14,20 @@ def home():
     return render_template("index.html")
 
 
-# -------------------- LOGIN --------------------
+# -------------------- LOGIN CON DEBUG --------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # ✅ Usar .get() para evitar KeyError
         correo = request.form.get('txtCorreo', '').strip()
         password = request.form.get('txtPassword', '').strip()
         
-        # Validar que no estén vacíos
+        # 🔍 DEBUG: Ver qué llega del formulario
+        print("=" * 50)
+        print("🔍 DEBUG - DATOS RECIBIDOS:")
+        print(f"Correo: '{correo}'")
+        print(f"Password length: {len(password)}")
+        print(f"Password (primeros 3 chars): {password[:3]}***")
+        
         if not correo or not password:
             flash("❌ Por favor completa todos los campos", "danger")
             return render_template("login.html")
@@ -31,32 +36,68 @@ def login():
             cur = mysql.connection.cursor()
             cur.execute("SELECT * FROM usuarios WHERE correo = %s", (correo,))
             user = cur.fetchone()
-            cur.close()
+            
+            # 🔍 DEBUG: Ver si encuentra el usuario
+            print(f"Usuario encontrado: {user is not None}")
+            
+            if user:
+                # 🔍 DEBUG: Ver datos del usuario
+                print(f"ID Usuario: {user['id_usuario']}")
+                print(f"Nombre: {user['nombre']}")
+                print(f"Estado: {user['estado']}")
+                print(f"Rol: {user['rol']}")
+                
+                # 🔍 DEBUG: Ver el hash almacenado
+                password_hash = user['contraseña'].strip()  # Eliminar espacios
+                print(f"Hash en DB (primeros 20 chars): {password_hash[:20]}...")
+                print(f"Hash completo length: {len(password_hash)}")
+                print(f"Hash empieza con: {password_hash[:10]}")
+                
+                # 🔍 DEBUG: Intentar verificar
+                print("\n🔐 Verificando contraseña...")
+                try:
+                    resultado = check_password_hash(password_hash, password)
+                    print(f"Resultado check_password_hash: {resultado}")
+                except Exception as e:
+                    print(f"❌ Error en check_password_hash: {e}")
+                    resultado = False
+                
+                print("=" * 50)
+                
+                if resultado:
+                    if user['estado'].lower() != 'activo':
+                        flash("⚠️ Cuenta inactiva. Revisa tu correo para activarla", "warning")
+                        cur.close()
+                        return redirect(url_for('auth.login'))
 
-            if user and check_password_hash(user['contraseña'], password):
-                if user['estado'].lower() != 'activo':
-                    flash("⚠️ Cuenta inactiva. Revisa tu correo para activarla", "warning")
-                    return redirect(url_for('auth.login'))
+                    session['logueado'] = True
+                    session['id_usuario'] = user['id_usuario']
+                    session['nombre'] = user['nombre']
+                    session['apellido'] = user['apellido']
+                    session['rol'] = user['rol']
 
-                session['logueado'] = True
-                session['id_usuario'] = user['id_usuario']
-                session['nombre'] = user['nombre']
-                session['apellido'] = user['apellido']
-                session['rol'] = user['rol']
+                    flash(f"✅ Bienvenido {user['nombre']} {user['apellido']}", "success")
+                    cur.close()
 
-                flash(f"✅ Bienvenido {user['nombre']} {user['apellido']}", "success")
-
-                if session['rol'] == 'administrador':
-                    return redirect(url_for('admin.admin_dashboard'))
-                elif session['rol'] == 'empleado':
-                    return redirect(url_for('empleado.empleado_dashboard'))
-                elif session['rol'] == 'cliente':
-                    return redirect(url_for('dashboard.cliente_dashboard'))
+                    if session['rol'] == 'administrador':
+                        return redirect(url_for('admin.admin_dashboard'))
+                    elif session['rol'] == 'empleado':
+                        return redirect(url_for('empleado.empleado_dashboard'))
+                    elif session['rol'] == 'cliente':
+                        return redirect(url_for('dashboard.cliente_dashboard'))
+                else:
+                    flash("❌ Correo o contraseña incorrectos", "danger")
             else:
+                print("❌ Usuario no encontrado en la base de datos")
                 flash("❌ Correo o contraseña incorrectos", "danger")
+            
+            cur.close()
+            
         except Exception as e:
             flash(f"❌ Error en el sistema: {str(e)}", "danger")
-            print(f"Error en login: {e}")
+            print(f"💥 ERROR COMPLETO: {e}")
+            import traceback
+            traceback.print_exc()
 
     return render_template("login.html")
 
@@ -65,7 +106,6 @@ def login():
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        # ✅ Usar .get() para evitar KeyError
         nombre = request.form.get('nombre', '').strip()
         apellido = request.form.get('apellido', '').strip()
         telefono = request.form.get('telefono', '').strip()
@@ -73,13 +113,11 @@ def registro():
         correo = request.form.get('correo', '').strip()
         password = request.form.get('password', '').strip()
         
-        # Validar campos obligatorios
         if not all([nombre, apellido, correo, password]):
             flash("❌ Por favor completa todos los campos obligatorios", "danger")
             return render_template('registro.html')
         
         try:
-            # Verificar si el correo ya existe
             cur = mysql.connection.cursor()
             cur.execute("SELECT * FROM usuarios WHERE correo = %s", (correo,))
             existe = cur.fetchone()
@@ -92,9 +130,16 @@ def registro():
             # Hash de la contraseña
             password_hash = generate_password_hash(password)
             
-            # IMPORTANTE: Siempre asignar rol 'cliente' por defecto
-            rol = 'cliente'
+            # 🔍 DEBUG: Ver el hash que se genera
+            print("=" * 50)
+            print("🔍 DEBUG - REGISTRO:")
+            print(f"Correo: {correo}")
+            print(f"Password original length: {len(password)}")
+            print(f"Hash generado (primeros 30 chars): {password_hash[:30]}...")
+            print(f"Hash length: {len(password_hash)}")
+            print("=" * 50)
             
+            rol = 'cliente'
             token = str(uuid.uuid4())
 
             cur.execute("""
@@ -131,6 +176,8 @@ Si no solicitaste este registro, ignora este correo.
             mysql.connection.rollback()
             flash(f"❌ Error al registrar: {str(e)}", "danger")
             print(f"Error en registro: {e}")
+            import traceback
+            traceback.print_exc()
 
     return render_template('registro.html')
 
@@ -165,7 +212,6 @@ def activar_cuenta(token):
 @auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        # ✅ Usar .get() para evitar KeyError
         correo = request.form.get('email', '').strip()
         
         if not correo:
@@ -196,7 +242,7 @@ Si no solicitaste este cambio, ignora este mensaje."""
                     flash("✅ Correo de recuperación enviado exitosamente", "success")
                 except Exception as e:
                     flash("❌ Error al enviar el correo. Intenta nuevamente", "danger")
-                    print(f"Error: {e}")
+                    print(f"Error enviando correo: {e}")
             else:
                 flash("⚠️ El correo no está registrado", "warning")
             
@@ -220,7 +266,6 @@ def reset_password(token):
         return redirect(url_for('auth.forgot_password'))
 
     if request.method == 'POST':
-        # ✅ Usar .get() para evitar KeyError
         password1 = request.form.get('password1', '').strip()
         password2 = request.form.get('password2', '').strip()
         
@@ -234,6 +279,14 @@ def reset_password(token):
 
         try:
             hashed = generate_password_hash(password1)
+            
+            # 🔍 DEBUG
+            print("=" * 50)
+            print("🔍 DEBUG - RESET PASSWORD:")
+            print(f"Correo: {correo}")
+            print(f"Nuevo hash length: {len(hashed)}")
+            print("=" * 50)
+            
             cur = mysql.connection.cursor()
             cur.execute("UPDATE usuarios SET contraseña = %s WHERE correo = %s", (hashed, correo))
             mysql.connection.commit()
@@ -245,6 +298,8 @@ def reset_password(token):
             mysql.connection.rollback()
             flash(f"❌ Error al cambiar contraseña: {str(e)}", "danger")
             print(f"Error en reset_password: {e}")
+            import traceback
+            traceback.print_exc()
 
     return render_template("reset_password.html")
 
